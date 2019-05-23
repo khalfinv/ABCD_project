@@ -2,7 +2,7 @@ import subprocess, os, sys, pickle
 import multiprocessing as mp
 import time
 start = time.time()
-finishedFiles = open("FinishedFiles.txt","w")
+finishedFiles = open("FinishedFiles.txt","wb")
 device_num = 0
 def preProcessSubject(key, value, device_num):
     if (value['T1'] is not "") and (value['rs'] is not []):
@@ -38,7 +38,7 @@ T1_folder = sys.argv[1]
 fmri_folder = sys.argv[2]
 	
 #read python dict back from the file
-pkl_file = open('ABCD_dic.pkl', 'rb')
+pkl_file = open('t1_to_fmri_dic.pkl', 'rb')
 dict = pickle.load(pkl_file)
 pkl_file.close()
 
