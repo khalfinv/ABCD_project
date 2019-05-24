@@ -5,14 +5,14 @@ start = time.time()
 finishedFiles = open("FinishedFiles.txt","wb")
 device_num = 0
 def preProcessSubject(key, value, device_num):
-    if (value['T1'] is not "") and (value['rs'] is not []):
+    if (value['T1'] is not "") and (value['fmri'] is not []):
         T1_subject_file = T1_folder + "/" + value['T1']
         for folder,sub_folders,files in os.walk(T1_subject_file):
             for file in files:
                 if file.endswith('.nii'):
                     T1_file = os.path.abspath(os.path.join(folder, file))
                     #print (T1_file)
-        for rs_subject in value['rs']:
+        for rs_subject in value['fmri']:
             rs_subject_file = fmri_folder + "/" + rs_subject
             for folder,sub_folders,files in os.walk(rs_subject_file):
                 for file in files:
@@ -24,7 +24,7 @@ def preProcessSubject(key, value, device_num):
                             os.makedirs(newSubjectDir)
                         print ("start preprocessing")
                         run_num = file.split("rest_run-")[1].split("_bold")[0]
-                        run_command = "preProcessingScript_multi " + "--root " + newSubjectDir + " --fmri " + rs_file + " --t1 " + T1_file + " --out run_" + run_num + " --device " + str(device_num)
+                        run_command = "preProcessingScript " + "--root " + newSubjectDir + " --fmri " + rs_file + " --t1 " + T1_file + " --out run_" + run_num + " --device " + str(device_num)
                         print (run_command)
                         subprocess.call(run_command, shell=True)
                         print ("end preprocessing")
