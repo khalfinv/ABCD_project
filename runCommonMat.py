@@ -11,7 +11,7 @@ import matplotlib.gridspec as gridspec
 
 def createCommonMat():
     #read python dict back from the file
-    pkl_file = open('covMatAndTimeSerias.pkl', 'rb')
+    pkl_file = open('matAndTimeSerias.pkl', 'rb')
     dict = pickle.load(pkl_file)
     pkl_file.close()
     #covariance matrices
