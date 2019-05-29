@@ -57,7 +57,7 @@ def createCovMat(rs_files, subject_folder):
     fig3 = plt.figure()
     plotting.plot_matrix(cor, colorbar=True, figure=fig3, vmin=-1., vmax=1., title='Power correlation matrix')
     fig3.savefig(os.path.abspath(os.path.join(subject_folder, "cor_matrix.png")))
-    return (subject_folder, {"time_series" : timeseries_new, "covariance" : cov, "correlation" : cor})
+    return (subject_folder, {"time_series" : timeseries_new, "covariance" : cov[0, :, :], "correlation" : cor})
 	
 
 
@@ -114,7 +114,7 @@ pool.join()
 
 
 print("Write to pkl file")
-f = open('covMatAndTimeSerias.pkl', mode="wb")
+f = open('matAndTimeSerias.pkl', mode="wb")
 pickle.dump(allParticipantsDic, f)
 f.close()
 

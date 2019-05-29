@@ -15,7 +15,7 @@ def createCommonMat():
     dict = pickle.load(pkl_file)
     pkl_file.close()
     #covariance matrices
-    covars = [val["covariance"][0] for val in dict.values()] 
+    covars = [val["covariance"] for val in dict.values()] 
     #find common covariance matrix
     common_cov_mat = est_common_cov(covars)
     #create common correlation matrix
