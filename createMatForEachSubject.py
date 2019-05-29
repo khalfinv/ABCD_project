@@ -22,7 +22,7 @@ def createCovMat(rs_files, subject_folder):
     print("Extract timeseries")  
     timeseries_all = []
     for rs_file in rs_files:
-        timeseries_all.append(spheres_masker.fit_transform(rs_files[0], confounds=None))
+        timeseries_all.append(spheres_masker.fit_transform(rs_file, confounds=None))
     timeseries_new = np.concatenate(timeseries_all)
 	#Prior to the use of motion estimates for regression and censoring, estimated motion time
 	#courses are temporally filtered using an infinite impulse response (IIR) notch filter, to attenuate
@@ -106,10 +106,8 @@ for subject_folder in os.listdir(preproc_folder):
     for root, dirs, files in os.walk(subject_folder):
         for sub_folder in dirs:
             rs_folder = os.path.abspath(os.path.join(preproc_folder,subject_folder,sub_folder))
-            rs_files.append(os.path.abspath(os.path.join(rs_folder, "fmri_rpi_aligned_nonlinear_mc_denoising_sm.nii.gz")))
-    res = pool.apply_async(createCovMat, args=(rs_files,subject_folder,),callback=collect_results)
-    res.get()
-    #createCovMat(rs_files,subject_folder) 
+            rs_files.append(os.path.abspath(os.path.join(rs_folder, "fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz")))
+    [pool.apply_async(createCovMat, args=(rs_files,subject_folder,),callback=collect_results)]
 
 pool.close() 
 pool.join()
