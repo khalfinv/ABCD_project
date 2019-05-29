@@ -23,7 +23,7 @@ dic = {}
 for subject_key in listFile:
     rsFound = False
     T1Found = False
-    subject_key = re.sub(r"[^a-zA-Z0-9]","",subject_key)
+    subject_key = re.sub(r"[^a-zA-Z0-9]","",subject_key) 	#remove '_' and whitespaces in subject_key  
     rsListDir = os.listdir(args.fmri_folder)
     rsListDir.sort()
     for rsFolderName in rsListDir:
