@@ -8,6 +8,7 @@ input:
 
 output: 
 motionparameters_filtered.1D text file 
+motionparameters_filtered.squared.1D text file with all the motion squared parameteres
 """
 
 import os, sys, argparse
@@ -69,12 +70,16 @@ if __name__ == "__main__":
     filtered_array = np.round(filtered_array,6)
 	
 	#write the output motion file
-    output_file = os.path.join(args.out_folder, "motionparameters_filtered.1D")
-    with open(output_file, 'w') as f:
-        for row in filtered_array:
-            for val in row:
-                f.write(str(val)+" ")
-            f.write("\n")				
+    motion_output = os.path.join(args.out_folder, "motionparameters_filtered.1D")
+    filtered_motion_file = open(motion_output, 'w')
+    squared_motion_output = os.path.join(args.out_folder, "motionparameters_filtered.squared.1D")
+    filtered_motion_squred_file = open(squared_motion_output, 'w')
+    for row in filtered_array:
+        for val in row:
+            filtered_motion_file.write(str(val)+" ")
+            filtered_motion_squred_file.write(str(round(val*val,6))+" ")          
+        filtered_motion_file.write("\n")	
+        filtered_motion_squred_file.write("\n")		
     # print(filtered_array)
     # fig = plt.figure()
     # plt.plot(motion_array[:,3:4], 'r')
