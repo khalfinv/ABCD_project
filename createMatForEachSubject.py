@@ -16,6 +16,7 @@ from scipy import stats
 start = time.time()
 allParticipantsDic = {}
 
+excluded_subject_file = open("excluded_subject.txt", "w+")
 
 def perform_scrubbing(motion_files):
     """Perform scrubbing according to ABCD paper
@@ -65,7 +66,13 @@ def createCovMat(rs_files, motion_files, subject_folder):
 
     timeseries_new = np.concatenate(timeseries_all)
     timeseries_censored = timeseries_new[perform_scrubbing(motion_files)]
-    print("timeseries_censored left volumes: ", timeseries_censored.shape[0])
+    num_of_left_volumes = timeseries_censored.shape[0]
+    print("timeseries_censored left volumes: ", num_of_left_volumes)
+    min_num_of_volumes = 375 # 5 minutes scan
+    if(num_of_left_volumes < min_num_of_volumes):
+        excluded_subject_file.write(subject_folder)
+        excluded_subject_file.write("\n")
+        return None
     # print("Plot timeseries before censoring")
     # fig1 = plt.figure()
     # plt.plot(timeseries_new.T[2])
@@ -154,7 +161,8 @@ def compute_sd(time_series):
 	
 
 def collect_results(result):
-    allParticipantsDic[result[0]] = result[1]
+    if(result != None):
+        allParticipantsDic[result[0]] = result[1]
 
 # rs_files = ["Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_01\\fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz",
  # "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_02\\fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz",
@@ -237,6 +245,8 @@ print("Write to pkl file")
 f = open('matAndTimeSerias.pkl', mode="wb")
 pickle.dump(allParticipantsDic, f)
 f.close()
+
+excluded_subject_file.close()
 
 #print the exucation time
 end = time.time()
