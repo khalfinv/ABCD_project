@@ -80,6 +80,9 @@ function process_fmri_step1() {
 
 	echo 'Motion correction'
 	MotionCorrection $fmri_folder/fmri_rpi_sliced_aligned_nonlinear.nii -platform $gpu_platform -device $gpu_device -quiet
+	
+	echo 'filter the motion parameters with IIR notch filter'
+	python3 /home/neuro/Desktop/ABCD_project/motion_filter.py --in_file $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D --out_folder $fmri_folder
 }
 
 function process_fmri_step2(){
@@ -108,7 +111,7 @@ function process_fmri_step2(){
 	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/GS_mean.1D -write $fmri_folder/GS_mean.backdif.1D
 
 	echo 'extract motion derivatives and squares timecourses'
-	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D -write $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.backdif.1D 
+	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/motionparameters_filtered.1D -write $fmri_folder/motionparameters_filtered.backdif.1D 
 
 	echo 'Performe denoising - csf, wm and motion'
 	# -bucket create one AFNI 'bucket' dataset containing various parameters of interest
@@ -116,25 +119,31 @@ function process_fmri_step2(){
 	# -x1D save X matrix to a .xmat.1D file
 	# -errts prefix of the 3D+time output dataset which will contain the residual error time series from the full model fit to the input data
 
-	3dDeconvolve -polort A -num_stimts 18 \
-	-stim_file 1 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D'[0]' -stim_base 1 -stim_label 1 roll \
-	-stim_file 2 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D'[1]' -stim_base 2 -stim_label 2 pitch \
-	-stim_file 3 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D'[2]' -stim_base 3 -stim_label 3 yaw \
-	-stim_file 4 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D'[3]' -stim_base 4 -stim_label 4 dS \
-	-stim_file 5 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D'[4]' -stim_base 5 -stim_label 5 dL \
-	-stim_file 6 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D'[5]' -stim_base 6 -stim_label 6 dP \
+	3dDeconvolve -polort A -num_stimts 24 \
+	-stim_file 1 $fmri_folder/motionparameters_filtered.1D'[0]' -stim_base 1 -stim_label 1 roll \
+	-stim_file 2 $fmri_folder/motionparameters_filtered.1D'[1]' -stim_base 2 -stim_label 2 pitch \
+	-stim_file 3 $fmri_folder/motionparameters_filtered.1D'[2]' -stim_base 3 -stim_label 3 yaw \
+	-stim_file 4 $fmri_folder/motionparameters_filtered.1D'[3]' -stim_base 4 -stim_label 4 dS \
+	-stim_file 5 $fmri_folder/motionparameters_filtered.1D'[4]' -stim_base 5 -stim_label 5 dL \
+	-stim_file 6 $fmri_folder/motionparameters_filtered.1D'[5]' -stim_base 6 -stim_label 6 dP \
 	-stim_file 7 $fmri_folder/csf_mean.1D -stim_base 7 -stim_label 7 csf \
 	-stim_file 8 $fmri_folder/wm_mean.1D -stim_base 8 -stim_label 8 wm \
 	-stim_file 9 $fmri_folder/GS_mean.1D -stim_base 9 -stim_label 9 gs \
 	-stim_file 10 $fmri_folder/csf_mean.backdif.1D -stim_base 10 -stim_label 10 csf_derivative \
 	-stim_file 11 $fmri_folder/wm_mean.backdif.1D -stim_base 11 -stim_label 11 wm_derivative  \
 	-stim_file 12 $fmri_folder/GS_mean.backdif.1D -stim_base 12 -stim_label 12 gs_derivative  \
-	-stim_file 13 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.backdif.1D'[0]' -stim_base 13 -stim_label 13 roll_derivative \
-	-stim_file 14 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.backdif.1D'[1]' -stim_base 14 -stim_label 14 pitch_derivative \
-	-stim_file 15 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.backdif.1D'[2]' -stim_base 15 -stim_label 15 yaw_derivative \
-	-stim_file 16 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.backdif.1D'[3]' -stim_base 16 -stim_label 16 dS_derivative \
-	-stim_file 17 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.backdif.1D'[4]' -stim_base 17 -stim_label 17 dL_derivative \
-	-stim_file 18 $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.backdif.1D'[5]' -stim_base 18 -stim_label 18 dP_derivative \
+	-stim_file 13 $fmri_folder/motionparameters_filtered.backdif.1D'[0]' -stim_base 13 -stim_label 13 roll_derivative \
+	-stim_file 14 $fmri_folder/motionparameters_filtered.backdif.1D'[1]' -stim_base 14 -stim_label 14 pitch_derivative \
+	-stim_file 15 $fmri_folder/motionparameters_filtered.backdif.1D'[2]' -stim_base 15 -stim_label 15 yaw_derivative \
+	-stim_file 16 $fmri_folder/motionparameters_filtered.backdif.1D'[3]' -stim_base 16 -stim_label 16 dS_derivative \
+	-stim_file 17 $fmri_folder/motionparameters_filtered.backdif.1D'[4]' -stim_base 17 -stim_label 17 dL_derivative \
+	-stim_file 18 $fmri_folder/motionparameters_filtered.backdif.1D'[5]' -stim_base 18 -stim_label 18 dP_derivative \
+	-stim_file 19 $fmri_folder/motionparameters_filtered.squared.1D'[0]' -stim_base 19 -stim_label 19 roll_squared \
+	-stim_file 20 $fmri_folder/motionparameters_filtered.squared.1D'[1]' -stim_base 20 -stim_label 20 pitch_squared \
+	-stim_file 21 $fmri_folder/motionparameters_filtered.squared.1D'[2]' -stim_base 21 -stim_label 21 yaw_squared \
+	-stim_file 22 $fmri_folder/motionparameters_filtered.squared.1D'[3]' -stim_base 22 -stim_label 22 dS_squared \
+	-stim_file 23 $fmri_folder/motionparameters_filtered.squared.1D'[4]' -stim_base 23 -stim_label 23 dL_squared \
+	-stim_file 24 $fmri_folder/motionparameters_filtered.squared.1D'[5]' -stim_base 24 -stim_label 24 dP_squared \
 	-TR_1D 0.8s -nobucket -x1D $fmri_folder/x1D.xmat.1D -input $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -errts  $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising.nii.gz -quiet
 
 	echo 'Smoothing'
