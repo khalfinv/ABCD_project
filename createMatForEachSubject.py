@@ -12,59 +12,175 @@ from nilearn.input_data import NiftiMapsMasker
 import matplotlib.pyplot as plt
 import multiprocessing as mp
 import time
-from nitime.analysis import FilterAnalyzer
-from nitime.timeseries import TimeSeries
-
+from scipy import stats
 start = time.time()
 allParticipantsDic = {}
-def createCovMat(rs_files, subject_folder):
+
+
+def perform_scrubbing(motion_files):
+    """Perform scrubbing according to ABCD paper
+    compute FD 
+	volumes with FD greater than 0.2 mm are excluded. Time
+	periods with fewer than five contiguous, sub-threshold time points are also excluded.
+    """
+    fd_all = []
+    # For each run calculate the FD and concatenate all runs to one array 
+    for motion_file in motion_files:
+	    fd_all.append(compute_fd(motion_file))
+    fd_new = np.concatenate(fd_all)
+    # print("fd_new: \n",fd_new)
+    # print("fd_new_shape: \n",fd_new.shape)
+    fd_thresh = 0.2
+	#Left only the indices in the FD array that the FD value is less than 0.2 
+    left_indices = np.nonzero(fd_new <= fd_thresh)[0]
+    # print("Number of values less or equal than 0.2 =", fd_new[fd_new <= fd_thresh].size)
+    # print("Their indices are ", left_indices)
+	#Leave only five contiguous points
+    count_five = 1
+    prev_index = 0
+    left_indices_copy = left_indices
+	# The final indices after censoring
+    final_indices = np.array([]).astype(int)
+    for i in left_indices_copy[1:]:
+	    #check if contiguous points
+        if ((i-prev_index) == 1):
+            count_five = count_five + 1
+        else:
+            if(count_five >= 5): 
+			    #save the contiguous indices
+                final_indices = np.append(final_indices,left_indices[:count_five])
+            left_indices = left_indices[count_five:]		
+            count_five = 1
+        prev_index = i
+    # print("final_indices : ", final_indices)
+    # print("final_indices size:", final_indices.size)
+    return (final_indices)
+    
+def createCovMat(rs_files, motion_files, subject_folder):
     print ("subject_folder: " + subject_folder) 
     print("Extract timeseries")  
     timeseries_all = []
     for rs_file in rs_files:
         timeseries_all.append(spheres_masker.fit_transform(rs_file, confounds=None))
+
     timeseries_new = np.concatenate(timeseries_all)
-	#Prior to the use of motion estimates for regression and censoring, estimated motion time
-	#courses are temporally filtered using an infinite impulse response (IIR) notch filter, to attenuate
-	#signals in the range of 0.31 - 0.43 Hz. This frequency range corresponds to empirically
-	#observed oscillatory signals in the motion estimates that are linked to respiration and the
-	#dynamic changes in magnetic susceptibility due to movement of the lungs in the range of 18.6 -
-	#25.7 respirations / minute.
-    # T = TimeSeries(timeseries_new, sampling_interval=0.8)
-    # print ("T before FilterAnalyzer: ", T)
-    # F = FilterAnalyzer(T, ub=0.43, lb=0.31)
-    # print ("T after FilterAnalyzer: ", T)
-    # filtered_timeseries = F.iir.data
-    print("Plot timeseries")
-    fig1 = plt.figure()
-    plt.plot(timeseries_new.T[2])
-    plt.plot(timeseries_new.T[0])
-    plt.plot(timeseries_new.T[5])
+    timeseries_censored = timeseries_new[perform_scrubbing(motion_files)]
+    print("timeseries_censored left volumes: ", timeseries_censored.shape[0])
+    # print("Plot timeseries before censoring")
+    # fig1 = plt.figure()
+    # plt.plot(timeseries_new.T[2])
+    # plt.plot(timeseries_new.T[0])
+    # plt.plot(timeseries_new.T[5])
+    # plt.title('Time Series')
+    # plt.xlabel('Scan number')
+    # plt.ylabel('Normalized signal')
+    # plt.legend()
+    # plt.tight_layout()
+    # fig1.savefig(os.path.abspath(os.path.join(subject_folder,"timeSeries_before_censoring.png")))
+    # print("Extract and plot covariance matrix")
+    # cov_measure = ConnectivityMeasure(cov_estimator=LedoitWolf(assume_centered=False, block_size=1000, store_precision=False), kind='covariance')
+    # cov = cov_measure.fit_transform([timeseries_new])
+    # fig2 = plt.figure()
+    # plotting.plot_matrix(cov[0, :, :], colorbar=True, figure=fig2, title='Power covariance matrix')
+    # fig2.savefig(os.path.abspath(os.path.join(subject_folder, "cov_matrix_before_censoring.png")))
+    # print("Extract and plot correlation matrix before censoring")
+    # cor = nilearn.connectome.cov_to_corr(cov[0, :, :])
+    # fig3 = plt.figure()
+    # plotting.plot_matrix(cor, colorbar=True, figure=fig3, vmin=-1., vmax=1., title='Power correlation matrix')
+    # fig3.savefig(os.path.abspath(os.path.join(subject_folder, "cor_matrix_before_censoring.png")))
+	
+    print("Plot timeseries after censoring")
+    fig3 = plt.figure()
+    plt.plot(timeseries_censored.T[2])
+    plt.plot(timeseries_censored.T[0])
+    plt.plot(timeseries_censored.T[5])
     plt.title('Time Series')
     plt.xlabel('Scan number')
     plt.ylabel('Normalized signal')
     plt.legend()
     plt.tight_layout()
-    fig1.savefig(os.path.abspath(os.path.join(subject_folder,"timeSeries.png")))
-    print("Extract and plot covariance matrix")
+    fig3.savefig(os.path.abspath(os.path.join(subject_folder,"timeSeries_after_censoring.png")))
+    print("Extract and plot covariance matrix after censoring")
     cov_measure = ConnectivityMeasure(cov_estimator=LedoitWolf(assume_centered=False, block_size=1000, store_precision=False), kind='covariance')
-    cov = cov_measure.fit_transform([timeseries_new])
-    fig2 = plt.figure()
-    plotting.plot_matrix(cov[0, :, :], colorbar=True, figure=fig2, title='Power covariance matrix')
-    fig2.savefig(os.path.abspath(os.path.join(subject_folder, "cov_matrix.png")))
+    cov = cov_measure.fit_transform([timeseries_censored])
+    fig4 = plt.figure()
+    plotting.plot_matrix(cov[0, :, :], colorbar=True, figure=fig4, title='Power covariance matrix')
+    fig4.savefig(os.path.abspath(os.path.join(subject_folder, "cov_matrix_after_censoring.png")))
     print("Extract and plot correlation matrix")
     cor = nilearn.connectome.cov_to_corr(cov[0, :, :])
-    fig3 = plt.figure()
-    plotting.plot_matrix(cor, colorbar=True, figure=fig3, vmin=-1., vmax=1., title='Power correlation matrix')
-    fig3.savefig(os.path.abspath(os.path.join(subject_folder, "cor_matrix.png")))
-    return (subject_folder, {"time_series" : timeseries_new, "covariance" : cov[0, :, :], "correlation" : cor})
+    fig5 = plt.figure()
+    plotting.plot_matrix(cor, colorbar=True, figure=fig5, vmin=-1., vmax=1., title='Power correlation matrix')
+    fig5.savefig(os.path.abspath(os.path.join(subject_folder, "cor_matrix_after_censoring.png")))
+    return (subject_folder, {"time_series" : timeseries_new, "covariance" : cov[0, :, :], "correlation" : cor, "num_of_volumes" : timeseries_censored.shape[0]})
 	
 
+def upload_motion_derivatives(motion_file):
+    motion_array = []
+    with open(motion_file, 'r') as f:
+        for line in f.readlines():
+            motion_array.append([float(value) for value in line.split(' ')])
+            #motion_array.append([float(value) for value in line.split('\t')]) #delete
+    return motion_array
+	
+def compute_fd(motion_file):
+    #delete#
+    # motion_array = np.array(upload_motion_derivatives(motion_file))
+    # motion_array[1:,:]=np.abs(motion_array[1:,:] - motion_array[:-1,:])
+    # headradius = 50
+    # motion_array[:,0:3] = np.pi*headradius*2*(motion_array[:,0:3]/360)
+	#################
+	#original#
+    motion_array = np.abs(upload_motion_derivatives(motion_file))
+    headradius = 50
+    motion_array[:,0:3] = np.pi*headradius*2*(motion_array[:,0:3]/360)
+	
+	##################
+    fd=np.sum(motion_array,1)
+    return fd
+	
+def compute_sd(time_series):
+    std_array = np.std(time_series, axis=1)
+    print (std_array)
+    print (std_array.shape)
+    mad = stats.median_absolute_deviation(std_array)
+    print(mad)
+    print(mad - (mad*3))
+    print(mad + (mad*3))
+    mask = (std_array >= (mad - (mad*3))) & (std_array <= (mad + (mad*3)))
+    left_indices = np.nonzero(mask)[0]
+    print(left_indices)
+    print(left_indices.shape)
+	    
+	
 
 def collect_results(result):
     allParticipantsDic[result[0]] = result[1]
 
-	
+# rs_files = ["Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_01\\fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz",
+ # "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_02\\fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz",
+ # "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_03\\fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz",
+ # "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_04\\fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz"]
+
+# rs_files = ["Z:\\Users\\Vicki\\ABCD\\rs_fmri\\original\\extractedFiles\\NDARINV00CY2MDM_baselineYear1Arm1_ABCD-MPROC-rsfMRI_20170822144829\\sub-NDARINV00CY2MDM\ses-baselineYear1Arm1\\func\\sub-NDARINV00CY2MDM_ses-baselineYear1Arm1_task-rest_run-01_bold.nii",
+# "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\original\\extractedFiles\\NDARINV00CY2MDM_baselineYear1Arm1_ABCD-MPROC-rsfMRI_20170822145614\\sub-NDARINV00CY2MDM\\ses-baselineYear1Arm1\\func\\sub-NDARINV00CY2MDM_ses-baselineYear1Arm1_task-rest_run-02_bold.nii",
+# "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\original\\extractedFiles\\NDARINV00CY2MDM_baselineYear1Arm1_ABCD-MPROC-rsfMRI_20170822152109\\sub-NDARINV00CY2MDM\\ses-baselineYear1Arm1\\func\\sub-NDARINV00CY2MDM_ses-baselineYear1Arm1_task-rest_run-03_bold.nii",
+# "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\original\\extractedFiles\\NDARINV00CY2MDM_baselineYear1Arm1_ABCD-MPROC-rsfMRI_20170822152854\\sub-NDARINV00CY2MDM\\ses-baselineYear1Arm1\\func\\sub-NDARINV00CY2MDM_ses-baselineYear1Arm1_task-rest_run-04_bold.nii"]
+
+# motion_files = ["Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_01\\motionparameters_filtered.backdif.1D",
+# "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_02\\motionparameters_filtered.backdif.1D",
+# "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_03\\motionparameters_filtered.backdif.1D",
+# "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_04\\motionparameters_filtered.backdif.1D"]
+
+#motion_files = [#"Z:\\Users\\Vicki\\ABCD\\rs_fmri\\original\\extractedFiles\\NDARINV00CY2MDM_baselineYear1Arm1_ABCD-MPROC-rsfMRI_20170822144829\\sub-NDARINV00CY2MDM\\ses-baselineYear1Arm1\\func\\sub-NDARINV00CY2MDM_ses-baselineYear1Arm1_task-rest_run-01_motion.txt",
+#"Z:\\Users\\Vicki\\ABCD\\rs_fmri\\original\\extractedFiles\\NDARINV00CY2MDM_baselineYear1Arm1_ABCD-MPROC-rsfMRI_20170822145614\\sub-NDARINV00CY2MDM\\ses-baselineYear1Arm1\\func\\sub-NDARINV00CY2MDM_ses-baselineYear1Arm1_task-rest_run-02_motion.txt",
+#"Z:\\Users\\Vicki\\ABCD\\rs_fmri\\original\\extractedFiles\\NDARINV00CY2MDM_baselineYear1Arm1_ABCD-MPROC-rsfMRI_20170822152109\\sub-NDARINV00CY2MDM\\ses-baselineYear1Arm1\\func\\sub-NDARINV00CY2MDM_ses-baselineYear1Arm1_task-rest_run-03_motion.txt",
+# "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\original\\extractedFiles\\NDARINV00CY2MDM_baselineYear1Arm1_ABCD-MPROC-rsfMRI_20170822152854\\sub-NDARINV00CY2MDM\\ses-baselineYear1Arm1\\func\\sub-NDARINV00CY2MDM_ses-baselineYear1Arm1_task-rest_run-04_motion.txt"]
+
+
+
+# subject_folder = "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32"
+
+
 #check input
 if len(sys.argv) <3:
     print("Insert preprocessed folder and path to Power coordinates")
@@ -95,6 +211,8 @@ mniCoordsFile.close()
 spheres_masker = input_data.NiftiSpheresMasker(
     seeds=coords, radius=10.,allow_overlap=True,
     detrend=True, standardize=True, low_pass=0.08, high_pass=0.009 , t_r=0.8)
+	
+# createCovMat(rs_files,motion_files,subject_folder)	
 
 
 # Init multiprocessing.Pool()
@@ -102,12 +220,14 @@ pool = mp.Pool(15)
 i=0
 for subject_folder in os.listdir(preproc_folder):
     rs_files=[]
+    motion_files=[]
     subject_folder = os.path.join(preproc_folder,subject_folder)
     for root, dirs, files in os.walk(subject_folder):
         for sub_folder in dirs:
             rs_folder = os.path.abspath(os.path.join(preproc_folder,subject_folder,sub_folder))
+            motion_files.append(os.path.abspath(os.path.join(rs_folder, "motionparameters_filtered.backdif.1D")))
             rs_files.append(os.path.abspath(os.path.join(rs_folder, "fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz")))
-    [pool.apply_async(createCovMat, args=(rs_files,subject_folder,),callback=collect_results)]
+    [pool.apply_async(createCovMat, args=(rs_files,motion_files,subject_folder,),callback=collect_results)]
 
 pool.close() 
 pool.join()
