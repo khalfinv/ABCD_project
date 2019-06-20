@@ -9,6 +9,7 @@ input:
 output: 
 motionparameters_filtered.1D text file 
 motionparameters_filtered.squared.1D text file with all the motion squared parameteres
+motionparameters_filtered.backdif.1D text file with all the motion derivatives (backwards) parameteres
 """
 
 import os, sys, argparse
@@ -25,7 +26,8 @@ def upload_motion_file(motion_file):
     motion_array = []
     with open(motion_file, 'r') as f:
         for line in f.readlines():
-            motion_array.append([float(value) for value in line.split('  ')])
+            line = " ".join(line.split())
+            motion_array.append([float(value) for value in line.split(' ')])
     return np.array(motion_array)
 	
 def create_filter(band_stop_min, band_stop_max, tr):
