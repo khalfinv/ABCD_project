@@ -4,7 +4,7 @@ Run IIR filter on motion file
 ====================================================================
 input: 
 --in_file : full path to motion text file in the format like the output from the MotionCorrection Broccoli function.
---out_folder : full path to the output folder
+--out_folder : full path to the output folder. Not obligatory
 
 output: 
 motionparameters_filtered.1D text file 
@@ -74,12 +74,20 @@ if __name__ == "__main__":
     filtered_motion_file = open(motion_output, 'w')
     squared_motion_output = os.path.join(args.out_folder, "motionparameters_filtered.squared.1D")
     filtered_motion_squred_file = open(squared_motion_output, 'w')
+    backdif_motion_output = os.path.join(args.out_folder, "motionparameters_filtered.backdif.1D")
+    backdif_motion_output_file = open(backdif_motion_output, 'w')
     for row in filtered_array:
         for val in row:
             filtered_motion_file.write(str(val)+" ")
             filtered_motion_squred_file.write(str(round(val*val,6))+" ")          
         filtered_motion_file.write("\n")	
-        filtered_motion_squred_file.write("\n")		
+        filtered_motion_squred_file.write("\n")
+    backdif_motion_output_file.write("0 0 0 0 0 0\n")
+    backdif_array=filtered_array[1:,:] - filtered_array[:-1,:]
+    for row in backdif_array:
+        for val in row:
+            backdif_motion_output_file.write(str(round(val,6))+" ")
+        backdif_motion_output_file.write("\n")	
     # print(filtered_array)
     # fig = plt.figure()
     # plt.plot(motion_array[:,3:4], 'r')
