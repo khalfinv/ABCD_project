@@ -16,7 +16,7 @@ from scipy import stats
 start = time.time()
 allParticipantsDic = {}
 
-excluded_subject_file = open("excluded_subject.txt", "w+")
+excluded_subject_file = open("excluded_subject.txt", "w")
 
 def perform_scrubbing(motion_files):
     """Perform scrubbing according to ABCD paper
@@ -68,11 +68,7 @@ def createCovMat(rs_files, motion_files, subject_folder):
     timeseries_censored = timeseries_new[perform_scrubbing(motion_files)]
     num_of_left_volumes = timeseries_censored.shape[0]
     print("timeseries_censored left volumes: ", num_of_left_volumes)
-    min_num_of_volumes = 375 # 5 minutes scan
-    if(num_of_left_volumes < min_num_of_volumes):
-        excluded_subject_file.write(subject_folder)
-        excluded_subject_file.write("\n")
-        return None
+
     # print("Plot timeseries before censoring")
     # fig1 = plt.figure()
     # plt.plot(timeseries_new.T[2])
@@ -161,8 +157,14 @@ def compute_sd(time_series):
 	
 
 def collect_results(result):
+    min_num_of_volumes = 375 # 5 minutes scan
     if(result != None):
-        allParticipantsDic[result[0]] = result[1]
+        if(result[1]["num_of_volumes"] >= min_num_of_volumes):
+            allParticipantsDic[result[0]] = result[1]
+        else:
+            excluded_subject_file.write(result[0])
+            excluded_subject_file.write("\n")
+
 
 # rs_files = ["Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_01\\fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz",
  # "Z:\\Users\\Vicki\\ABCD\\rs_fmri\\BroccoliPreProcessed\\ver_4\\NDARINVYACN0D32\\run_02\\fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz",
@@ -230,13 +232,14 @@ for subject_folder in os.listdir(preproc_folder):
     rs_files=[]
     motion_files=[]
     subject_folder = os.path.join(preproc_folder,subject_folder)
-    for root, dirs, files in os.walk(subject_folder):
-        for sub_folder in dirs:
-            rs_folder = os.path.abspath(os.path.join(preproc_folder,subject_folder,sub_folder))
-            motion_files.append(os.path.abspath(os.path.join(rs_folder, "motionparameters_filtered.backdif.1D")))
-            rs_files.append(os.path.abspath(os.path.join(rs_folder, "fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz")))
-    [pool.apply_async(createCovMat, args=(rs_files,motion_files,subject_folder,),callback=collect_results)]
-
+    if(os.path.isdir(subject_folder)):
+        for root, dirs, files in os.walk(subject_folder):
+            for sub_folder in dirs:
+                rs_folder = os.path.abspath(os.path.join(preproc_folder,subject_folder,sub_folder))
+                motion_files.append(os.path.abspath(os.path.join(rs_folder, "motionparameters_filtered.backdif.1D")))
+                rs_files.append(os.path.abspath(os.path.join(rs_folder, "fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz")))
+        multiple_res = [pool.apply_async(createCovMat, args=(rs_files,motion_files,subject_folder,),callback=collect_results)]
+print([res.get() for res in multiple_res])
 pool.close() 
 pool.join()
 

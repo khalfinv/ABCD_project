@@ -16,6 +16,7 @@ def createCommonMat():
     pkl_file.close()
     #covariance matrices
     covars = [val["covariance"] for val in dict.values()] 
+    print("number of subjects: ", len(covars))
     #find common covariance matrix
     common_cov_mat = est_common_cov(covars)
     #create common correlation matrix
