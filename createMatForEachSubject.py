@@ -32,30 +32,35 @@ def perform_scrubbing(motion_files):
     # print("fd_new: \n",fd_new)
     # print("fd_new_shape: \n",fd_new.shape)
     fd_thresh = 0.2
-	#Left only the indices in the FD array that the FD value is less than 0.2 
-    left_indices = np.nonzero(fd_new <= fd_thresh)[0]
+	#Left only the indexes in the FD array that the FD value is less than 0.2 
+    left_indexes = np.nonzero(fd_new <= fd_thresh)[0]
     # print("Number of values less or equal than 0.2 =", fd_new[fd_new <= fd_thresh].size)
     # print("Their indices are ", left_indices)
 	#Leave only five contiguous points
     count_five = 1
     prev_index = 0
-    left_indices_copy = left_indices
-	# The final indices after censoring
-    final_indices = np.array([]).astype(int)
-    for i in left_indices_copy[1:]:
+    left_indexes_copy = left_indexes
+	# The final indexes after censoring
+    final_indexes = np.array([]).astype(int)
+    for i in left_indexes_copy[1:]:
 	    #check if contiguous points
         if ((i-prev_index) == 1):
             count_five = count_five + 1
         else:
             if(count_five >= 5): 
-			    #save the contiguous indices
-                final_indices = np.append(final_indices,left_indices[:count_five])
-            left_indices = left_indices[count_five:]		
+			    #save the contiguous indexes
+                final_indexes = np.append(final_indexes,left_indexes[:count_five])
+            #cut the indexes already passed 
+            left_indexes = left_indexes[count_five:]
+            #start to count from beginning			
             count_five = 1
         prev_index = i
-    # print("final_indices : ", final_indices)
-    # print("final_indices size:", final_indices.size)
-    return (final_indices)
+    #insert the last 5 continues indexes
+    if(count_five >=5):
+        final_indexes = np.append(final_indexes,left_indexes[:count_five])
+    #print("final_indices : ", final_indexes)
+    #print("final_indices size:", final_indexes.size)
+    return (final_indexes)
     
 def createCovMat(rs_files, motion_files, subject_folder):
     print ("subject_folder: " + subject_folder) 
@@ -121,8 +126,8 @@ def upload_motion_derivatives(motion_file):
     motion_array = []
     with open(motion_file, 'r') as f:
         for line in f.readlines():
+            line = " ".join(line.split())
             motion_array.append([float(value) for value in line.split(' ')])
-            #motion_array.append([float(value) for value in line.split('\t')]) #delete
     return motion_array
 	
 def compute_fd(motion_file):
