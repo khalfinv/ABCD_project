@@ -18,7 +18,7 @@ allParticipantsDic = {}
 
 excluded_subject_file = open("excluded_subject.txt", "w")
 
-def perform_scrubbing(motion_files):
+def perform_scrubbing(motion_files, time_series):
     """Perform scrubbing according to ABCD paper
     compute FD 
 	volumes with FD greater than 0.2 mm are excluded. Time
@@ -58,8 +58,14 @@ def perform_scrubbing(motion_files):
     #insert the last 5 continues indexes
     if(count_five >=5):
         final_indexes = np.append(final_indexes,left_indexes[:count_five])
-    #print("final_indices : ", final_indexes)
-    #print("final_indices size:", final_indexes.size)
+    sd_left_indexes = compute_sd(final_indexes,time_series)
+    #print("sd_left_indexes : ", sd_left_indexes)
+    #print("sd_left_indexes size:", sd_left_indexes.size)
+    #print("final_indexes_after_fd : ", final_indexes)
+    #print("final_indexes_after_fd size:", final_indexes.size)
+    final_indexes = np.intersect1d(final_indexes,sd_left_indexes)
+    #print("final_indexes_after_sd : ", final_indexes)
+    #print("final_indexes_after_sd size:", final_indexes.size)
     return (final_indexes)
     
 def createCovMat(rs_files, motion_files, subject_folder):
@@ -70,7 +76,7 @@ def createCovMat(rs_files, motion_files, subject_folder):
         timeseries_all.append(spheres_masker.fit_transform(rs_file, confounds=None))
 
     timeseries_new = np.concatenate(timeseries_all)
-    timeseries_censored = timeseries_new[perform_scrubbing(motion_files)]
+    timeseries_censored = timeseries_new[perform_scrubbing(motion_files, timeseries_new)]
     num_of_left_volumes = timeseries_censored.shape[0]
     print("timeseries_censored left volumes: ", num_of_left_volumes)
 
@@ -146,18 +152,19 @@ def compute_fd(motion_file):
     fd=np.sum(motion_array,1)
     return fd
 	
-def compute_sd(time_series):
+def compute_sd(fd_keep_indexes,time_series):
     std_array = np.std(time_series, axis=1)
-    print (std_array)
-    print (std_array.shape)
-    mad = stats.median_absolute_deviation(std_array)
-    print(mad)
-    print(mad - (mad*3))
-    print(mad + (mad*3))
+    #print ("std_array: ", std_array)
+    #print ("std_array.shape: ", std_array.shape)
+    mad = stats.median_absolute_deviation(std_array[fd_keep_indexes])
+    #print(mad)
+    #print(mad - (mad*3))
+    #print(mad + (mad*3))
     mask = (std_array >= (mad - (mad*3))) & (std_array <= (mad + (mad*3)))
-    left_indices = np.nonzero(mask)[0]
-    print(left_indices)
-    print(left_indices.shape)
+    #print("mask: ", mask)
+    #print("mask shape: ", mask.shape)
+    left_indexes = np.nonzero(mask)[0]
+    return (left_indexes)
 	    
 	
 
