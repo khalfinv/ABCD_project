@@ -75,15 +75,14 @@ function process_fmri_step1() {
 		3dcalc -prefix $fmri_folder/fmri_rpi_sliced.nii.gz -a $fmri_folder/fmri_rpi.nii.gz'[16..$]' -expr 'a' 1>/dev/null
 	fi
 
-	echo 'Motion correction'
-	MotionCorrection $fmri_folder/fmri_rpi_sliced.nii.gz -platform $gpu_platform -device $gpu_device -quiet
-	
 	echo 'Register fMRI to non linear T1'
-	RegisterTwoVolumes $fmri_folder/fmri_rpi_sliced_mc.nii.gz $root_folder/T1_rpi_skull_2mm_aligned_nonlinear.nii -output $fmri_folder/fmri_rpi_sliced_mc -quiet -platform $gpu_platform -device $gpu_device 1>/dev/null
+	RegisterTwoVolumes $fmri_folder/fmri_rpi_sliced.nii.gz $root_folder/T1_rpi_skull_2mm_aligned_nonlinear.nii -output $fmri_folder/fmri_rpi_sliced -quiet -platform $gpu_platform -device $gpu_device 1>/dev/null
 
+	echo 'Motion correction'
+	MotionCorrection $fmri_folder/fmri_rpi_sliced_aligned_nonlinear.nii -platform $gpu_platform -device $gpu_device -quiet
 	
 	echo 'filter the motion parameters with IIR notch filter'
-	python3 /home/neuro/Desktop/ABCD_project/motion_filter.py --in_file $fmri_folder/fmri_rpi_sliced_motionparameters.1D --out_folder $fmri_folder
+	python3 /home/neuro/Desktop/ABCD_project/motion_filter.py --in_file $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D --out_folder $fmri_folder
 }
 
 function process_fmri_step2(){
@@ -91,24 +90,24 @@ function process_fmri_step2(){
 	# -template the output dataset will be the on the same grid as this dataset
 	# -preserve when this option is used, the program will copy the nonzero values of input voxels to the output dataset, rather than create a fractional mask
 	if [ ! -f $fmri_folder/csf_mask_frac.nii.gz ]; then
-		3dfractionize -template $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear.nii -input $root_folder/csf_mask.nii.gz -preserve -prefix $fmri_folder/csf_mask_frac.nii.gz 1>/dev/null
+		3dfractionize -template $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -input $root_folder/csf_mask.nii.gz -preserve -prefix $fmri_folder/csf_mask_frac.nii.gz 1>/dev/null
 	fi
 
 	if [ ! -f $fmri_folder/wm_mask_frac.nii.gz ]; then
-		3dfractionize -template $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear.nii -input $root_folder/wm_mask.nii.gz -preserve -prefix $fmri_folder/wm_mask_frac.nii.gz 1>/dev/null
+		3dfractionize -template $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -input $root_folder/wm_mask.nii.gz -preserve -prefix $fmri_folder/wm_mask_frac.nii.gz 1>/dev/null
 	fi
 
 	if [ ! -f $fmri_folder/all_brain_mask_frac.nii.gz ]; then
-		3dfractionize -template $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear.nii -input $root_folder/all_brain_mask.nii.gz -preserve -prefix $fmri_folder/all_brain_mask_frac.nii.gz 1>/dev/null
+		3dfractionize -template $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -input $root_folder/all_brain_mask.nii.gz -preserve -prefix $fmri_folder/all_brain_mask_frac.nii.gz 1>/dev/null
 	fi
 
 	echo 'extract wm,csf and GS and their derivatives timecourses'
 	#-q means to print only the minimal numerical results. This is usefull if you want to create a*.1D file, without any extra text.
-	3dmaskave -q -mask $fmri_folder/csf_mask_frac.nii.gz $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear.nii -quiet > $fmri_folder/csf_mean.1D 
+	3dmaskave -q -mask $fmri_folder/csf_mask_frac.nii.gz $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -quiet > $fmri_folder/csf_mean.1D 
 	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/csf_mean.1D -write $fmri_folder/csf_mean.backdif.1D
-	3dmaskave -q -mask $fmri_folder/wm_mask_frac.nii.gz $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear.nii -quiet > $fmri_folder/wm_mean.1D 
+	3dmaskave -q -mask $fmri_folder/wm_mask_frac.nii.gz $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -quiet > $fmri_folder/wm_mean.1D 
 	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/wm_mean.1D -write $fmri_folder/wm_mean.backdif.1D
-	3dmaskave -q -mask $fmri_folder/all_brain_mask_frac.nii.gz $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear.nii -quiet > $fmri_folder/GS_mean.1D 
+	3dmaskave -q -mask $fmri_folder/all_brain_mask_frac.nii.gz $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -quiet > $fmri_folder/GS_mean.1D 
 	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/GS_mean.1D -write $fmri_folder/GS_mean.backdif.1D
 
 
@@ -143,10 +142,10 @@ function process_fmri_step2(){
 	-stim_file 22 $fmri_folder/motionparameters_filtered.squared.1D'[3]' -stim_base 22 -stim_label 22 dS_squared \
 	-stim_file 23 $fmri_folder/motionparameters_filtered.squared.1D'[4]' -stim_base 23 -stim_label 23 dL_squared \
 	-stim_file 24 $fmri_folder/motionparameters_filtered.squared.1D'[5]' -stim_base 24 -stim_label 24 dP_squared \
-	-TR_1D 0.8s -nobucket -x1D $fmri_folder/x1D.xmat.1D -input $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear.nii -errts  $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear_denoising.nii.gz -quiet
+	-TR_1D 0.8s -nobucket -x1D $fmri_folder/x1D.xmat.1D -input $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -errts  $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising.nii.gz -quiet
 
 	echo 'Smoothing'
-	Smoothing $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear_denoising.nii.gz -quiet -platform $gpu_platform -device $gpu_device 
+	Smoothing $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising.nii.gz -quiet -platform $gpu_platform -device $gpu_device 
 
 }
 
@@ -200,7 +199,7 @@ fi
 
 process_T1
 #If not finished last time to create the final fmri file
-if [ ! -f $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear_denoising_sm.nii.gz ]; then
+if [ ! -f $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz ]; then
 	create_seg_masks & process_fmri_step1
     wait
     process_fmri_step2
@@ -210,17 +209,17 @@ echo 'Deleting unneccesary files'
 if [ -f $fmri_folder/fmri_rpi.nii.gz ]; then
 	rm $fmri_folder/fmri_rpi.nii.gz
 fi
-if [ -f $fmri_folder/fmri_rpi_sliced_mc.nii.gz ]; then
-	rm $fmri_folder/fmri_rpi_sliced_mc.nii.gz
+if [ -f $fmri_folder/fmri_rpi_sliced_aligned_linear.nii ]; then
+	rm $fmri_folder/fmri_rpi_sliced_aligned_linear.nii
 fi
-if [ -f $fmri_folder/fmri_rpi_sliced_mc_aligned_linear.nii ]; then
-	rm $fmri_folder/fmri_rpi_sliced_mc_aligned_linear.nii
+if [ -f $fmri_folder/fmri_rpi_sliced_aligned_nonlinear.nii ]; then
+	rm $fmri_folder/fmri_rpi_sliced_aligned_nonlinear.nii
 fi
-if [ -f $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear.nii ]; then
-	rm $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear.nii
+if [ -f $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii ]; then
+	rm $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii
 fi
-if [ -f $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear_denoising.nii.gz ]; then
-	rm $fmri_folder/fmri_rpi_sliced_mc_aligned_nonlinear_denoising.nii.gz
+if [ -f $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising.nii.gz ]; then
+	rm $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising.nii.gz
 fi
 
 
