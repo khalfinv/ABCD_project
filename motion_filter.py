@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 """
 ====================================================================
 Run IIR filter on motion file
@@ -90,13 +92,3 @@ if __name__ == "__main__":
         for val in row:
             backdif_motion_output_file.write(str(round(val,6))+" ")
         backdif_motion_output_file.write("\n")	
-    # print(filtered_array)
-    # fig = plt.figure()
-    # plt.plot(motion_array[:,3:4], 'r')
-    # plt.plot(filtered_array[:, 3:4], 'b')
-    # plt.title('Motion')
-    # plt.xlabel('Scan number')
-    # plt.ylabel('Normalized signal')
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.show()
