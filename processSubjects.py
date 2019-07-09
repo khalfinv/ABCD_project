@@ -1,71 +1,111 @@
-import subprocess, os, sys, pickle
+#!/usr/bin/python3
+"""
+====================================================
+Run preprocessing for all the fmri files
+====================================================
+
+
+"""
+
+import subprocess, os, sys, pickle, argparse
 import multiprocessing as mp
 import time
-start = time.time()
-finishedFiles = open("FinishedFiles.txt","wb")
-device_num = 0
-def preProcessSubject(key, value, device_num):
-    if (value['T1'] is not "") and (value['fmri'] is not []):
-        T1_subject_file = T1_folder + "/" + value['T1']
-        for folder,sub_folders,files in os.walk(T1_subject_file):
-            for file in files:
-                if file.endswith('.nii'):
-                    T1_file = os.path.abspath(os.path.join(folder, file))
-                    #print (T1_file)
-        for rs_subject in value['fmri']:
-            rs_subject_file = fmri_folder + "/" + rs_subject
-            for folder,sub_folders,files in os.walk(rs_subject_file):
+
+
+def preProcessSubject(subject_id, value, device_num):
+    """ Call the preProcessing script
+    param subject_id: string. The subject's id
+    param value: dictionary. t1_to_fmri dictionary value corresponding to subject's id. {T1: the T1 file, fmri: list of all fMRI folders}
+    param device_num: integer. The gpu device number (0 or 1)
+    param out_folder: string. The output folder for the results
+    return: None
+    """
+    try:
+        if (value['T1'] is not "") and (value['fmri'] is not []):
+            T1_subject_folder = T1_folder + "/" + value['T1']
+            for folder,sub_folders,files in os.walk(T1_subject_folder):
                 for file in files:
                     if file.endswith('.nii'):
-                        rs_file = os.path.abspath(os.path.join(folder, file))
-                        #print (rs_file)
-                        newSubjectDir = "/home/neuro/Desktop/neuro-group/Users/Vicki/ABCD/rs_fmri/BroccoliPreProcessed/" + key
-                        if not os.path.exists(newSubjectDir):
-                            os.makedirs(newSubjectDir)
-                        print ("start preprocessing")
-                        run_num = file.split("rest_run-")[1].split("_bold")[0]
-                        run_command = "preProcessingScript " + "--root " + newSubjectDir + " --fmri " + rs_file + " --t1 " + T1_file + " --out run_" + run_num + " --device " + str(device_num)
-                        print (run_command)
-                        subprocess.call(run_command, shell=True)
-                        print ("end preprocessing")
-        finishedFiles.write(key + "\n")
-#check input
-if len(sys.argv) <3:
-    print("Insert the T1 files folder and fmri files folder in this order!!!")
-    exit()
-
-T1_folder = sys.argv[1]
-fmri_folder = sys.argv[2]
+                        T1_file = os.path.abspath(os.path.join(folder, file))
+            for fmri_subject_folder in value['fmri']:
+                fmri_subject_folder_full_path = fmri_folder + "/" + fmri_subject_folder
+			    #search for the fMRI file and motion file
+                fmri_file = None
+                motion_file = None
+                for folder,sub_folders,files in os.walk(fmri_subject_folder_full_path):
+                    for file in files:
+                        if file.endswith('.nii'):
+                            fmri_file = os.path.abspath(os.path.join(folder, file))                 
+                        if file.endswith('.1D'):
+                            motion_file = os.path.abspath(os.path.join(folder, file))
+                if motion_file != None and fmri_file != None:
+                    newSubjectDir = os.path.abspath(os.path.join(out_folder, subject_id))
+                    if not os.path.exists(newSubjectDir):
+                        os.makedirs(newSubjectDir)
+                    #start preprocessing
+                    run_num = fmri_file.split("rest_run-")[1].split("_bold")[0]
+                    run_command = "preProcessingScript " + "--root " + newSubjectDir + " --fmri " + fmri_file + " --t1 " + T1_file + " --out run_" + run_num + " --device " + str(device_num) + " --motion " + motion_file
+                    #print (run_command)
+                    ret = subprocess.run(run_command, shell=True, check=True)
+                    #end preprocessing
+    except:
+        raise Exception( "subject_id: %s \n" % subject_id + str(sys.exc_info()[1])).with_traceback(sys.exc_info()[2])
+		
+		
+def collect_errors(exception):
+    """ Callback for errors collecting from threads. Get the exception and write to file
+    param exception: Exception. The exception that was raised
+    """
+    error_file.write(str(exception))
+    error_file.write("\n\n\n")
 	
-#read python dict back from the file
-pkl_file = open('t1_to_fmri_dic.pkl', 'rb')
-dict = pickle.load(pkl_file)
-pkl_file.close()
-
-# Init multiprocessing.Pool()
-pool = mp.Pool(4)
-print ("Number of cpus = " + str(mp.cpu_count()))
-
-general_index = 0
-for key, value in dict.items():
-    #If all the neccesary files exist
-    general_index = general_index + 1
-    print("general_index: " + str(general_index))
-    device_num = 1 - device_num
-    [pool.apply_async(preProcessSubject, args=(key,value,device_num,))]
-    if general_index >= 50:
-	    break;
+if __name__ == "__main__":
+	#start timer
+    start = time.time()	
 	
-pool.close() 
-pool.join()
-finishedFiles.close()
+	#parser arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--t1_folder', required=True, type=str, help='path to folder containing of the T1 files')
+    parser.add_argument('--fmri_folder', required=True, type=str, help='path to folder containing of the fMRI files')
+    parser.add_argument('--out_folder', required=True, type=str, help='path to output folder')
+    parser.add_argument('--dict_pkl', required=True, type=str, help='full path to t1 to fmri dictionary pkl file')
+    args = parser.parse_args()
+	
+    T1_folder = args.t1_folder
+    fmri_folder = args.fmri_folder
+    out_folder = args.out_folder
+    dict_pkl = args.dict_pkl
+						
+    #read dict from pkl file
+    pkl_file = open(dict_pkl, 'rb')
+    dict = pickle.load(pkl_file)
+    pkl_file.close()
+						
+    #open the error and out files
+    error_file = open(out_folder + "/error_file.txt", "w+")
+    # Init multiprocessing.Pool()
+    pool = mp.Pool(4)
 
-end = time.time()
-timeInSeconds = (end - start)
-timeInMinutes = timeInSeconds / 60
-timeInHours = int(timeInMinutes / 60)
-
-print ("Total time : " + str(timeInHours) + " hours and " + str(int(timeInMinutes % 60)) + " minutes")
+    device_num = 0 #gpu device number (0 or 1)
+    general_index = 0 #If we want only part of the subjects
+    for key, value in dict.items():
+        general_index = general_index + 1
+        print("general_index: " + str(general_index))
+        device_num = 1 - device_num
+        [pool.apply_async(preProcessSubject, args=(key,value,device_num,), error_callback = collect_errors )]
+        if general_index >= 50:
+	        break;
+			
+	#Close the multiprocessing.Pool() and wait for all threads
+    pool.close() 
+    pool.join()
+	
+    #stop timer and print the elapsed time
+    end = time.time()
+    timeInSeconds = (end - start)
+    timeInMinutes = timeInSeconds / 60
+    timeInHours = int(timeInMinutes / 60)
+    print ("Total time : " + str(timeInHours) + " hours and " + str(int(timeInMinutes % 60)) + " minutes")
 
 	
 

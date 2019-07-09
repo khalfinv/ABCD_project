@@ -1,4 +1,5 @@
 #!/bin/bash
+#!usr/bin/env python3
 
 SECONDS=0
 
@@ -8,29 +9,42 @@ function print_help () {
 	echo "--fmri or -f : The full path to the fmri file."
 	echo "--t1 or -t : The full path to the T1 file."
 	echo "--out or -o : The fmri output folder. Will be created under the root folder."
+	echo "--motion or -m : The motion regressors file"
 	echo "optional: "
 	echo "--platform or -p : The gpu_platform to use"
 	echo "--device or -d : The gpu_device to use"
+}
+
+function check_status () {
+    if [ $1 -ne 0 ]; then
+        echo "****error occured***"
+		echo "fmri file: ${fmri_file}" 
+        exit $1 
+	fi
 }
 
 function process_T1() {
     if [ ! -f  $root_folder/T1_rpi.nii.gz ]; then
 	    echo 'Resample T1 to RPI format'
 		3dresample -orient rpi -prefix $root_folder/T1_rpi.nii.gz -input $T1_file
+		check_status $?
 	fi
 
 	if [ ! -f  $root_folder/T1_rpi_skull.nii.gz ]; then
 	    echo 'Performing skull strip'
 		bet2 $root_folder/T1_rpi.nii.gz $root_folder/T1_rpi_skull.nii.gz
+        check_status $?
 	fi
  
 	if [ ! -f  $root_folder/T1_rpi_skull_2mm_aligned_nonlinear.nii ]; then
 	    echo 'Register T1 to non linear MNI152 T1 2mm brain'
 		RegisterTwoVolumes $root_folder/T1_rpi_skull.nii.gz /home/neuro/Desktop/fsl/data/standard/MNI152_T1_2mm_brain.nii.gz -output $root_folder/T1_rpi_skull_2mm -quiet -platform $gpu_platform -device $gpu_device 
+		check_status $?
 	fi
 	if [ ! -f  $root_folder/T1_rpi_skull_1mm_aligned_nonlinear.nii ]; then
 	    echo 'Register T1 to non linear MNI152 T1 1mm brain'
 		RegisterTwoVolumes $root_folder/T1_rpi_skull.nii.gz /home/neuro/Desktop/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz -output $root_folder/T1_rpi_skull_1mm -quiet -platform $gpu_platform -device $gpu_device 
+		check_status $?
 	fi
 }
 
@@ -42,25 +56,28 @@ function create_seg_masks(){
 	if [ ! -f $root_folder/T1_rpi_skull_1mm_aligned_nonlinear_pve_0.nii.gz -o ! -f $root_folder/T1_rpi_skull_1mm_aligned_nonlinear_pve_2.nii.gz ]; then
 	    echo 'Segment GM,CSF and WM'
 		fast --channels=1 --type=1 --class=3 $root_folder/T1_rpi_skull_1mm_aligned_nonlinear.nii 1>/dev/null
+		check_status $?
 	fi
 
 	if [ ! -f  $root_folder/csf_mask.nii.gz ]; then
 	    echo 'Create csf mask in template space' 
-		#RegisterTwoVolumes $root_folder/T1_rpi_skull_pve_0.nii.gz /home/neuro/Desktop/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz -quiet -platform $gpu_platform -device $gpu_device 
 		3dcalc -a $root_folder/T1_rpi_skull_1mm_aligned_nonlinear_pve_0.nii.gz -expr 'step(a-.99)' -prefix $root_folder/csf_mask.nii.gz -datum short 1>/dev/null
+		check_status $?
 	fi
 
 
 	if [ ! -f  $root_folder/wm_mask.nii.gz ]; then
         echo 'Create WM mask in template space'
-		#RegisterTwoVolumes $root_folder/T1_rpi_skull_pve_2.nii.gz /home/neuro/Desktop/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz -quiet -platform $gpu_platform -device $gpu_device 
 		3dcalc -a $root_folder/T1_rpi_skull_1mm_aligned_nonlinear_pve_2.nii.gz -expr 'step(a-.99)' -prefix $root_folder/wm_mask.nii.gz -datum short 1>/dev/null
+		check_status $?
 	fi
 	
 	if [ ! -f  $root_folder/all_brain.nii.gz -o ! -f $root_folder/all_brain_mask.nii.gz ]; then
 	    echo 'Create GS mask in template space'
 		3dAutomask -prefix $root_folder/all_brain.nii.gz $root_folder/T1_rpi_skull_1mm_aligned_nonlinear.nii 1>/dev/null
+		check_status $?
 		3dcalc -a $root_folder/all_brain.nii.gz -expr 'step(a-.99)' -prefix $root_folder/all_brain_mask.nii.gz -datum short 1>/dev/null
+		check_status $?
 	fi
 }
 
@@ -68,21 +85,18 @@ function process_fmri_step1() {
 	if [ ! -f  $fmri_folder/fmri_rpi.nii.gz ]; then
         echo 'Resample fMRI to RPI format'
 		3dresample -orient rpi -prefix $fmri_folder/fmri_rpi.nii.gz -input $fmri_file
+		check_status $?
 	fi
 
-	if [ ! -f  $fmri_folder/fmri_rpi_sliced.nii.gz ]; then
-	    echo 'Discard the first 16 volumes'
-		3dcalc -prefix $fmri_folder/fmri_rpi_sliced.nii.gz -a $fmri_folder/fmri_rpi.nii.gz'[16..$]' -expr 'a' 1>/dev/null
+    if [ ! -f  $fmri_folder/fmri_rpi_aligned_nonlinear.nii ]; then 
+	    echo 'Register fMRI to non linear T1'
+	    RegisterTwoVolumes $fmri_folder/fmri_rpi.nii.gz $root_folder/T1_rpi_skull_2mm_aligned_nonlinear.nii -output $fmri_folder/fmri_rpi -quiet -platform $gpu_platform -device $gpu_device 1>/dev/null
+        check_status $?
 	fi
-
-	echo 'Register fMRI to non linear T1'
-	RegisterTwoVolumes $fmri_folder/fmri_rpi_sliced.nii.gz $root_folder/T1_rpi_skull_2mm_aligned_nonlinear.nii -output $fmri_folder/fmri_rpi_sliced -quiet -platform $gpu_platform -device $gpu_device 1>/dev/null
-
-	echo 'Motion correction'
-	MotionCorrection $fmri_folder/fmri_rpi_sliced_aligned_nonlinear.nii -platform $gpu_platform -device $gpu_device -quiet
 	
 	echo 'filter the motion parameters with IIR notch filter'
-	python3 /home/neuro/Desktop/ABCD_project/motion_filter.py --in_file $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_motionparameters.1D --out_folder $fmri_folder
+	motion_filter.py --in_file $motion_file --out_folder $fmri_folder
+	check_status $?
 }
 
 function process_fmri_step2(){
@@ -90,28 +104,35 @@ function process_fmri_step2(){
 	# -template the output dataset will be the on the same grid as this dataset
 	# -preserve when this option is used, the program will copy the nonzero values of input voxels to the output dataset, rather than create a fractional mask
 	if [ ! -f $fmri_folder/csf_mask_frac.nii.gz ]; then
-		3dfractionize -template $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -input $root_folder/csf_mask.nii.gz -preserve -prefix $fmri_folder/csf_mask_frac.nii.gz 1>/dev/null
+		3dfractionize -template $fmri_folder/fmri_rpi_aligned_nonlinear.nii -input $root_folder/csf_mask.nii.gz -preserve -prefix $fmri_folder/csf_mask_frac.nii.gz 1>/dev/null
+		check_status $?
 	fi
 
 	if [ ! -f $fmri_folder/wm_mask_frac.nii.gz ]; then
-		3dfractionize -template $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -input $root_folder/wm_mask.nii.gz -preserve -prefix $fmri_folder/wm_mask_frac.nii.gz 1>/dev/null
+		3dfractionize -template $fmri_folder/fmri_rpi_aligned_nonlinear.nii -input $root_folder/wm_mask.nii.gz -preserve -prefix $fmri_folder/wm_mask_frac.nii.gz 1>/dev/null
+		check_status $?
 	fi
 
 	if [ ! -f $fmri_folder/all_brain_mask_frac.nii.gz ]; then
-		3dfractionize -template $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -input $root_folder/all_brain_mask.nii.gz -preserve -prefix $fmri_folder/all_brain_mask_frac.nii.gz 1>/dev/null
+		3dfractionize -template $fmri_folder/fmri_rpi_aligned_nonlinear.nii -input $root_folder/all_brain_mask.nii.gz -preserve -prefix $fmri_folder/all_brain_mask_frac.nii.gz 1>/dev/null
+		check_status $?
 	fi
 
 	echo 'extract wm,csf and GS and their derivatives timecourses'
 	#-q means to print only the minimal numerical results. This is usefull if you want to create a*.1D file, without any extra text.
-	3dmaskave -q -mask $fmri_folder/csf_mask_frac.nii.gz $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -quiet > $fmri_folder/csf_mean.1D 
-	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/csf_mean.1D -write $fmri_folder/csf_mean.backdif.1D
-	3dmaskave -q -mask $fmri_folder/wm_mask_frac.nii.gz $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -quiet > $fmri_folder/wm_mean.1D 
-	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/wm_mean.1D -write $fmri_folder/wm_mean.backdif.1D
-	3dmaskave -q -mask $fmri_folder/all_brain_mask_frac.nii.gz $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -quiet > $fmri_folder/GS_mean.1D 
-	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/GS_mean.1D -write $fmri_folder/GS_mean.backdif.1D
+	3dmaskave -q -mask $fmri_folder/csf_mask_frac.nii.gz $fmri_folder/fmri_rpi_aligned_nonlinear.nii -quiet > $fmri_folder/csf_mean.1D 
+	check_status $?
+	1d_tool.py -derivative -infile $fmri_folder/csf_mean.1D -write $fmri_folder/csf_mean.backdif.1D -overwrite
+	check_status $?
+	3dmaskave -q -mask $fmri_folder/wm_mask_frac.nii.gz $fmri_folder/fmri_rpi_aligned_nonlinear.nii -quiet > $fmri_folder/wm_mean.1D 
+	check_status $?
+	1d_tool.py -derivative -infile $fmri_folder/wm_mean.1D -write $fmri_folder/wm_mean.backdif.1D -overwrite
+	check_status $?
+	3dmaskave -q -mask $fmri_folder/all_brain_mask_frac.nii.gz $fmri_folder/fmri_rpi_aligned_nonlinear.nii -quiet > $fmri_folder/GS_mean.1D 
+	check_status $?
+	1d_tool.py -derivative -infile $fmri_folder/GS_mean.1D -write $fmri_folder/GS_mean.backdif.1D -overwrite
+	check_status $?
 
-	echo 'extract motion derivatives and squares timecourses'
-	python3 /home/neuro/AFNI/1d_tool.py -derivative -infile $fmri_folder/motionparameters_filtered.1D -write $fmri_folder/motionparameters_filtered.backdif.1D 
 
 	echo 'Performe denoising - csf, wm and motion'
 	# -bucket create one AFNI 'bucket' dataset containing various parameters of interest
@@ -144,10 +165,12 @@ function process_fmri_step2(){
 	-stim_file 22 $fmri_folder/motionparameters_filtered.squared.1D'[3]' -stim_base 22 -stim_label 22 dS_squared \
 	-stim_file 23 $fmri_folder/motionparameters_filtered.squared.1D'[4]' -stim_base 23 -stim_label 23 dL_squared \
 	-stim_file 24 $fmri_folder/motionparameters_filtered.squared.1D'[5]' -stim_base 24 -stim_label 24 dP_squared \
-	-TR_1D 0.8s -nobucket -x1D $fmri_folder/x1D.xmat.1D -input $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii -errts  $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising.nii.gz -quiet
+	-TR_1D 0.8s -nobucket -x1D $fmri_folder/x1D.xmat.1D -input $fmri_folder/fmri_rpi_aligned_nonlinear.nii -errts  $fmri_folder/fmri_rpi_aligned_nonlinear_denoising.nii.gz -quiet
+	check_status $?
 
 	echo 'Smoothing'
-	Smoothing $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising.nii.gz -quiet -platform $gpu_platform -device $gpu_device 
+	Smoothing $fmri_folder/fmri_rpi_aligned_nonlinear_denoising.nii.gz -quiet -platform $gpu_platform -device $gpu_device 
+	check_status $?
 
 }
 
@@ -186,6 +209,10 @@ do
 			gpu_device=$2
 			shift
 			;;
+		--motion | -m)
+		    motion_file=$2
+			shift
+			;;
 	esac
 	shift
 
@@ -195,33 +222,43 @@ fmri_folder=$root_folder/$fmri_folder_name
 mkdir -p "$fmri_folder"
 if [ $? -ne 0 ]; then
 	echo "Fail to create fmri folder!";
-	exit;
+	exit 1;
 fi
 
 
 process_T1
+status_process_T1=$?
+check_status $status_process_T1
 #If not finished last time to create the final fmri file
-if [ ! -f $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising_sm.nii.gz ]; then
-	create_seg_masks & process_fmri_step1
-    wait
+if [ ! -f $fmri_folder/fmri_rpi_aligned_nonlinear_denoising_sm.nii.gz ]; then
+	create_seg_masks &
+	pid1=$! &
+	process_fmri_step1 &
+	pid2=$! 
+    wait $pid2 
+	status_process_fmri_step1=$? 
+	wait $pid1 
+    status_create_seg_masks=$?
+    check_status $status_create_seg_masks
+    check_status $status_process_fmri_step1
     process_fmri_step2
+	status_process_fmri_step2=$?
+	check_status $status_process_fmri_step2
+	
 fi
 
 echo 'Deleting unneccesary files'
-if [ -f $fmri_folder/fmri_rpi.nii.gz ]; then
-	rm $fmri_folder/fmri_rpi.nii.gz
+if [ -f $fmri_folder/fmri_rpi_aligned_linear.nii ]; then
+	rm $fmri_folder/fmri_rpi_aligned_linear.nii
 fi
-if [ -f $fmri_folder/fmri_rpi_sliced_aligned_linear.nii ]; then
-	rm $fmri_folder/fmri_rpi_sliced_aligned_linear.nii
+if [ -f $fmri_folder/fmri_rpi_aligned_nonlinear.nii ]; then
+	rm $fmri_folder/fmri_rpi_aligned_nonlinear.nii
 fi
-if [ -f $fmri_folder/fmri_rpi_sliced_aligned_nonlinear.nii ]; then
-	rm $fmri_folder/fmri_rpi_sliced_aligned_nonlinear.nii
+if [ -f $fmri_folder/fmri_rpi_aligned_nonlinear.nii ]; then
+	rm $fmri_folder/fmri_rpi_aligned_nonlinear.nii
 fi
-if [ -f $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii ]; then
-	rm $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc.nii
-fi
-if [ -f $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising.nii.gz ]; then
-	rm $fmri_folder/fmri_rpi_sliced_aligned_nonlinear_mc_denoising.nii.gz
+if [ -f $fmri_folder/fmri_rpi_aligned_nonlinear_denoising.nii.gz ]; then
+	rm $fmri_folder/fmri_rpi_aligned_nonlinear_denoising.nii.gz
 fi
 
 
