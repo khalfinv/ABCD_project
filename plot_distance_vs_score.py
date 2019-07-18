@@ -21,11 +21,14 @@ import pyriemann
 import matplotlib.pyplot as plt
 import numpy as np
 import networkToIndexDic 
+from scipy.stats.stats import pearsonr
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--score_file', required=True, type=str, help='path to excel file containing the score')
 parser.add_argument('--score_key', required=True, type=str, help='name of the test score column')
 parser.add_argument('--networks', required=False, default=[], nargs='+', help='list of Power networks')
+parser.add_argument('--subjects_data_dict', required=True, help='path to pkl file with the subjects matrices')
+parser.add_argument('--common_data_dict', required=True, help='path to pkl file common matrices')
 args = parser.parse_args()
 
 #Read the excel file 
@@ -40,12 +43,12 @@ if(args.score_key not in df):
     sys.exit()
 
 #open and read the pkl file of all subjects' matrices	
-pkl_file = open('matAndTimeSerias.pkl', 'rb')
+pkl_file = open(args.subjects_data_dict, 'rb')
 allMatDict = pickle.load(pkl_file)
 pkl_file.close()
 
 #open and read the pkl file of the common matrices	
-pkl_file = open('commonCovAndCorMat.pkl', 'rb')
+pkl_file = open(args.common_data_dict, 'rb')
 (common_cov_mat, common_cor_mat) = pickle.load(pkl_file)
 pkl_file.close()
 
@@ -54,9 +57,9 @@ pkl_file.close()
 for i, row in df.iterrows(): 
     df.at[i,'SUBJECTKEY'] = re.sub(r"[^a-zA-Z0-9]","",df.at[i,'SUBJECTKEY'])
 
-#create dictionary where key = SUBJECT_KEY and value = {correlation matrix distance, covariance matrix distance and score} according to the Power ntworks(if exists)
+#create dictionary where key = SUBJECT_KEY and value = {correlation matrix distance, covariance matrix distance and score} according to the Power networks(if exists in input)
 dist_to_score_dict={}
-#create a list of indecis to slice for each matrix
+#create a list of indexes to slice for each matrix
 listToSlice = []
 #In case of at least one network in arguments
 #Slice the common matrices according to networks coordinates
@@ -94,10 +97,11 @@ plt.title('Correlation' + str(args.networks))
 plt.xlabel('Distance')
 plt.ylabel(args.score_key + ' Score')
 plt.plot(all_corr_distances, all_scores, 'ro' )
-plt.figtext(0.5, 0.8,"R = " + str(np.corrcoef(all_corr_distances, all_scores)[0,1]), wrap=True,
+(corr_coef, p_value) = pearsonr(all_corr_distances, all_scores)
+plt.figtext(0.5, 0.8,"R = " + str(round(corr_coef,3)) + "    p_value = " + str(round(p_value,3)), wrap=True,
             horizontalalignment='center', fontsize=12)
 fig1.savefig("disToScoreCorr" + str(args.networks) + "_" + args.score_key + ".png")	
-print("correlation :" , np.corrcoef(all_corr_distances, all_scores)[0,1])
+print("correlation: " , corr_coef, " p_value: ", p_value)
 
 #plot covariance graph
 fig2 = plt.figure()
@@ -106,10 +110,11 @@ plt.xlabel('Distance')
 plt.ylabel(args.score_key + ' Score')
 all_scores = [value["score"] for value in dist_to_score_dict.values() ]
 plt.plot(all_cov_distances, all_scores, 'ro' )
-plt.figtext(0.5, 0.8,"R = " + str(np.corrcoef(all_cov_distances, all_scores)[0,1]), wrap=True,
+(corr_coef, p_value) = pearsonr(all_cov_distances, all_scores)
+plt.figtext(0.5, 0.8,"R = " + str(round(corr_coef,3)) + "    p_value = " + str(round(p_value,3)), wrap=True,
             horizontalalignment='center', fontsize=12)
 fig2.savefig("disToScoreCov" + str(args.networks) + "_" + args.score_key + ".png")	
-print("covariance :" , np.corrcoef(all_cov_distances, all_scores)[0,1])
+print("covariance :" , corr_coef, " p_value: ", p_value)
 
 
 
