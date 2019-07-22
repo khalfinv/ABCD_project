@@ -1,0 +1,264 @@
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Uncertain
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Hand
+Sensory/somatomotor Mouth
+Sensory/somatomotor Mouth
+Sensory/somatomotor Mouth
+Sensory/somatomotor Mouth
+Sensory/somatomotor Mouth
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Cingulo-opercular
+Auditory
+Auditory
+Auditory
+Auditory
+Auditory
+Auditory
+Auditory
+Auditory
+Auditory
+Auditory
+Auditory
+Auditory
+Auditory
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Default mode
+Memory retrieval
+Memory retrieval
+Memory retrieval
+Memory retrieval
+Memory retrieval
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Visual
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Fronto-parietal
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Salience
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Subcortical
+Ventral attention
+Ventral attention
+Ventral attention
+Ventral attention
+Ventral attention
+Ventral attention
+Ventral attention
+Ventral attention
+Ventral attention
+Dorsal attention
+Dorsal attention
+Dorsal attention
+Dorsal attention
+Dorsal attention
+Dorsal attention
+Dorsal attention
+Dorsal attention
+Dorsal attention
+Dorsal attention
+Dorsal attention
+Cerebellum
+Cerebellum
+Cerebellum
+Cerebellum
