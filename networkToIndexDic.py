@@ -1,3 +1,11 @@
+#!/usr/bin/python3
+"""
+==========================================================================================================================
+Dictionary of all power networks. Key: network's name, Value: the indexes according to the order of the Power coordinates.
+The indexes are suitable for the common correlation and covariance matrices.
+==========================================================================================================================
+"""
+
 import numpy as np
 
 dic = {
