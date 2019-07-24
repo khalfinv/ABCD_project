@@ -12,6 +12,7 @@ score_key = the column name of the test score
 networks = networks for slicing and distance calculation. Not mandatory.  
 subjects_data_dict = path to pkl file with the subjects matrices
 common_data_dict = path to pkl file common matrices
+out_folder = path to output folder. Not mandatory, the default is the current folder
 
 @Output:
 Two graphs - correlation and covariance matrices distance vs the behavioral test score. The R value and p_value are plotted on the graph.  
@@ -32,6 +33,7 @@ if __name__ == "__main__":
 	parser.add_argument('--networks', required=False, default=[], nargs='+', help='list of Power networks')
 	parser.add_argument('--subjects_data_dict', required=True, help='path to pkl file with the subjects matrices')
 	parser.add_argument('--common_data_dict', required=True, help='path to pkl file common matrices')
+	parser.add_argument('--out_folder', required=False, default='.', help='path to output folder')
 	args = parser.parse_args()
 
 	#Read the excel file 
@@ -87,7 +89,6 @@ if __name__ == "__main__":
 		#calculate distance for correlation matrix and covariance matrix
 		dis_corr = pyriemann.utils.distance.distance(subject_corr_mat, common_cor_mat, metric='riemann')
 		dis_cov = pyriemann.utils.distance.distance(subject_cov_mat, common_cov_mat, metric='riemann')
-		#subject_key = key.split("/")[-1] #The key from allMatDict is the full path to the folder. Cut only the subject_key (folder name)
 		raw = df.loc[lambda df: df['SUBJECTKEY'] == subject_key] #Get the raw from the excel that match the subject_key. The raw is from type pandas.series
 		dist_to_score_dict[subject_key] = {"corr_distance" : dis_corr, "cov_distance" : dis_cov, "score" : raw[args.score_key].values[0]}
 		
@@ -103,7 +104,7 @@ if __name__ == "__main__":
 	(corr_coef, p_value) = pearsonr(all_corr_distances, all_scores)
 	plt.figtext(0.5, 0.8,"R = " + str(round(corr_coef,3)) + "    p_value = " + str(round(p_value,3)), wrap=True,
 				horizontalalignment='center', fontsize=12)
-	fig1.savefig("disToScoreCorr" + str(args.networks) + "_" + args.score_key + ".png")	
+	fig1.savefig(args.out_folder + "\disToScoreCorr" + str(args.networks) + "_" + args.score_key + ".png")	
 	print("correlation: " , corr_coef, " p_value: ", p_value)
 
 	#plot covariance graph
@@ -116,7 +117,7 @@ if __name__ == "__main__":
 	(corr_coef, p_value) = pearsonr(all_cov_distances, all_scores)
 	plt.figtext(0.5, 0.8,"R = " + str(round(corr_coef,3)) + "    p_value = " + str(round(p_value,3)), wrap=True,
 				horizontalalignment='center', fontsize=12)
-	fig2.savefig("disToScoreCov" + str(args.networks) + "_" + args.score_key + ".png")	
+	fig2.savefig(args.out_folder + "\disToScoreCov" + str(args.networks) + "_" + args.score_key + ".png")	
 	print("covariance :" , corr_coef, " p_value: ", p_value)
 
 
