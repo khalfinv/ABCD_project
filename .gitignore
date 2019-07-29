@@ -1,5 +1,4 @@
 # ignore compiled files
 *.pyc
 *.pkl
-*.txt
 *.1D
