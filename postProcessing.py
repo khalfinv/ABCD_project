@@ -23,7 +23,7 @@ error_file_postProcessing.txt file: located in the preproc_folder. This file con
 errors occured during post processing. 
 subjects_data.pkl file: located in the preproc_folder. This file contains dictionary with all the subjects data as following:
 key: subject's key . 
-value: {"time_series" : matrix of time series after censoring (power_rois,time_points), "covariance" : covariance matrix of power rois (power_rois, power_rois),
+value: {"time_series" : matrix of time series after censoring (time_points, power_rois), "covariance" : covariance matrix of power rois (power_rois, power_rois),
  "correlation" : correlation matrix of power rois (power_rois, power_rois), "num_of_volumes" : num of volumes left after censoring}
 
 """
@@ -100,6 +100,7 @@ def postProcessing(rs_files, motion_files, subject_folder, spheres_masker):
         timeseries_all = []
         for rs_file in rs_files:
 		    # Extract the time series
+            print ("rs_file: ", rs_file) 
             timeseries = spheres_masker.fit_transform(rs_file, confounds=None)
             #Remove the first 16 volumes
             timeseries = np.delete(timeseries, range(16), axis = 0)
@@ -111,14 +112,17 @@ def postProcessing(rs_files, motion_files, subject_folder, spheres_masker):
         print("Number of left volumes after censoring: ", num_of_left_volumes)	
         print("Extract covariance matrix")
         cov_measure = ConnectivityMeasure(cov_estimator=LedoitWolf(assume_centered=False, block_size=1000, store_precision=False), kind='covariance')
-        cov = cov_measure.fit_transform([timeseries_censored])
-        print("Extract correlation matrix")
-        cor = nilearn.connectome.cov_to_corr(cov[0, :, :])
+        cov = []
+        cor = []
+        if (num_of_left_volumes > 0):
+            cov = cov_measure.fit_transform([timeseries_censored])[0, :, :]
+            print("Extract correlation matrix")
+            cor = nilearn.connectome.cov_to_corr(cov)
     except:
         raise Exception( "subject_folder: %s \n" % subject_folder + str(sys.exc_info()[1])).with_traceback(sys.exc_info()[2])
     #get only the subject key from full path
     subject_key = subject_folder.split("\\")[-1]
-    return (subject_key, {"time_series" : timeseries_censored, "covariance" : cov[0, :, :], "correlation" : cor, "num_of_volumes" : timeseries_censored.shape[0]})
+    return (subject_key, {"time_series" : timeseries_censored, "covariance" : cov, "correlation" : cor, "num_of_volumes" : num_of_left_volumes})
 	
 
 def upload_motion_derivatives(motion_file):
