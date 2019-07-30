@@ -3,8 +3,15 @@
 ====================================================
 Run preprocessing for all the fmri files
 ====================================================
+input: 
+--t1_folder : full path to folder containing all the T1 files
+--fmri_folder : full path to folder containing all the fmri files
+--out_folder' : path to output folder
+--dict_pkl' : full path to t1 to fmri dictionary pkl file
 
 
+output: 
+	preprocessed folder for each subject 
 """
 
 import subprocess, os, sys, pickle, argparse
@@ -17,7 +24,6 @@ def preProcessSubject(subject_id, value, device_num):
     param subject_id: string. The subject's id
     param value: dictionary. t1_to_fmri dictionary value corresponding to subject's id. {T1: the T1 file, fmri: list of all fMRI folders}
     param device_num: integer. The gpu device number (0 or 1)
-    param out_folder: string. The output folder for the results
     return: None
     """
     try:
@@ -35,9 +41,11 @@ def preProcessSubject(subject_id, value, device_num):
                 for folder,sub_folders,files in os.walk(fmri_subject_folder_full_path):
                     for file in files:
                         if file.endswith('.nii'):
-                            fmri_file = os.path.abspath(os.path.join(folder, file))                 
+                            fmri_file = os.path.abspath(os.path.join(folder, file))
+                            print (fmri_file)
                         if file.endswith('.1D'):
                             motion_file = os.path.abspath(os.path.join(folder, file))
+                            print (motion_file)
                 if motion_file != None and fmri_file != None:
                     newSubjectDir = os.path.abspath(os.path.join(out_folder, subject_id))
                     if not os.path.exists(newSubjectDir):
@@ -45,9 +53,13 @@ def preProcessSubject(subject_id, value, device_num):
                     #start preprocessing
                     run_num = fmri_file.split("rest_run-")[1].split("_bold")[0]
                     run_command = "preProcessingScript " + "--root " + newSubjectDir + " --fmri " + fmri_file + " --t1 " + T1_file + " --out run_" + run_num + " --device " + str(device_num) + " --motion " + motion_file
-                    #print (run_command)
+                    print (run_command)
                     ret = subprocess.run(run_command, shell=True, check=True)
                     #end preprocessing
+                else:
+                    raise Exception("Not found fmri file or motion file in one of the folders")
+        else:
+            raise Exception("Missing T1 or fmri value in dictionary") 
     except:
         raise Exception( "subject_id: %s \n" % subject_id + str(sys.exc_info()[1])).with_traceback(sys.exc_info()[2])
 		
@@ -58,6 +70,7 @@ def collect_errors(exception):
     """
     error_file.write(str(exception))
     error_file.write("\n\n\n")
+    error_file.flush()
 	
 if __name__ == "__main__":
 	#start timer
@@ -89,12 +102,12 @@ if __name__ == "__main__":
     device_num = 0 #gpu device number (0 or 1)
     general_index = 0 #If we want only part of the subjects
     for key, value in dict.items():
-        general_index = general_index + 1
-        print("general_index: " + str(general_index))
+        #general_index = general_index + 1
+        #print("general_index: " + str(general_index))
         device_num = 1 - device_num
         [pool.apply_async(preProcessSubject, args=(key,value,device_num,), error_callback = collect_errors )]
-        if general_index >= 50:
-	        break;
+        #if general_index >= 2:
+	    #    break;
 			
 	#Close the multiprocessing.Pool() and wait for all threads
     pool.close() 

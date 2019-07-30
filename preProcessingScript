@@ -1,8 +1,30 @@
 #!/bin/bash
 #!usr/bin/env python3
 
+############### Preprocessing script ##################
+# Includes the following steps:
+# T1:
+# - Reorinating to RPI format
+# - Skull stripping
+# - Non linear registaration to 2mm MNI template
+# - Non linear registaration to 1mm MNI template
+# - Segmentation to CSF, GM and WM 
+# - Create CSF, WM and GS masks
+
+# fMRI:
+# - Reorinating to RPI format
+# - Non linear registration to T1 2mm (after registartion to MNI space) 
+# - Filter the motion regressors with IIR notch filter and create motion derivatives and squares
+# - Down sample WM,CSF and GS masks to match EPI resolution
+# - extract wm,csf and GS timecourses and their derivatives 
+# - Regress out the motion regressors including derivatives and squares. 
+# - Regress out the CSF, WM and GS time courses including derivatives
+# - Smoothing 
+
+#######################################################
 SECONDS=0
 
+##### Print help for input parameters #####
 function print_help () {
 	echo "Pre-proccesing script. Please insert the following parameters:"
 	echo "--root or -r : The root folder for all the output files."
@@ -15,6 +37,10 @@ function print_help () {
 	echo "--device or -d : The gpu_device to use"
 }
 
+################ Check the status of the input ######################## 
+# If the status is not 0 (no error):  
+# print ****error occured*** with the corresponding fmri file and exit
+#######################################################################
 function check_status () {
     if [ $1 -ne 0 ]; then
         echo "****error occured***"
@@ -23,6 +49,12 @@ function check_status () {
 	fi
 }
 
+################ Basic processing of the T1 file ###################
+# - Reorinating to RPI format
+# - Skull stripping
+# - Non linear registaration to 2mm MNI template
+# - Non linear registaration to 1mm MNI template
+####################################################################
 function process_T1() {
     if [ ! -f  $root_folder/T1_rpi.nii.gz ]; then
 	    echo 'Resample T1 to RPI format'
@@ -41,6 +73,7 @@ function process_T1() {
 		RegisterTwoVolumes $root_folder/T1_rpi_skull.nii.gz /home/neuro/Desktop/fsl/data/standard/MNI152_T1_2mm_brain.nii.gz -output $root_folder/T1_rpi_skull_2mm -quiet -platform $gpu_platform -device $gpu_device 
 		check_status $?
 	fi
+	
 	if [ ! -f  $root_folder/T1_rpi_skull_1mm_aligned_nonlinear.nii ]; then
 	    echo 'Register T1 to non linear MNI152 T1 1mm brain'
 		RegisterTwoVolumes $root_folder/T1_rpi_skull.nii.gz /home/neuro/Desktop/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz -output $root_folder/T1_rpi_skull_1mm -quiet -platform $gpu_platform -device $gpu_device 
@@ -48,7 +81,11 @@ function process_T1() {
 	fi
 }
 
-function create_seg_masks(){
+############ Create brain tissues masks ###################
+# Segment T1 to GM, WM and CSF
+# Create WM, CSF and GS masks
+###########################################################
+function create_masks(){
 
 	# --channels = number of input images
 	# --type=1 - T1 type
@@ -81,6 +118,11 @@ function create_seg_masks(){
 	fi
 }
 
+############################# Process fmri file - first step ###################################
+# - Reorinating to RPI format
+# - Non linear registration to T1 2mm (after registartion to MNI space) 
+# - Filter the motion regressors with IIR notch filter and create motion derivatives and squares
+################################################################################################
 function process_fmri_step1() {
 	if [ ! -f  $fmri_folder/fmri_rpi.nii.gz ]; then
         echo 'Resample fMRI to RPI format'
@@ -99,6 +141,13 @@ function process_fmri_step1() {
 	check_status $?
 }
 
+############################# Process fmri file - seconds step ###################################
+# - Down sample WM,CSF and GS masks to match EPI resolution
+# - extract WM,CSF and GS timecourses and their derivatives 
+# - Regress out the motion regressors including derivatives and squares. 
+# - Regress out the CSF, WM and GS time courses including derivatives
+# - Smoothing 
+################################################################################################
 function process_fmri_step2(){
 	echo 'Down sample WM,CSF and GS masks to match EPI resolution'
 	# -template the output dataset will be the on the same grid as this dataset
@@ -118,8 +167,8 @@ function process_fmri_step2(){
 		check_status $?
 	fi
 
-	echo 'extract wm,csf and GS and their derivatives timecourses'
-	#-q means to print only the minimal numerical results. This is usefull if you want to create a*.1D file, without any extra text.
+	echo 'extract wm,csf and GS timecourses and their derivatives '
+	#-quiet means to print only the minimal numerical results. This is usefull if you want to create a*.1D file, without any extra text.
 	3dmaskave -q -mask $fmri_folder/csf_mask_frac.nii.gz $fmri_folder/fmri_rpi_aligned_nonlinear.nii -quiet > $fmri_folder/csf_mean.1D 
 	check_status $?
 	1d_tool.py -derivative -infile $fmri_folder/csf_mean.1D -write $fmri_folder/csf_mean.backdif.1D -overwrite
@@ -134,12 +183,10 @@ function process_fmri_step2(){
 	check_status $?
 
 
-	echo 'Performe denoising - csf, wm and motion'
-	# -bucket create one AFNI 'bucket' dataset containing various parameters of interest
-	# -cbucket save the regrassion coefficients into a dataset
+	echo 'Performe denoising - csf, wm, gs and motion'
+	# -nobucket not creating AFNI 'bucket' dataset containing various parameters of interest
 	# -x1D save X matrix to a .xmat.1D file
 	# -errts prefix of the 3D+time output dataset which will contain the residual error time series from the full model fit to the input data
-
 	3dDeconvolve -polort A -num_stimts 24 \
 	-stim_file 1 $fmri_folder/motionparameters_filtered.1D'[0]' -stim_base 1 -stim_label 1 roll \
 	-stim_file 2 $fmri_folder/motionparameters_filtered.1D'[1]' -stim_base 2 -stim_label 2 pitch \
@@ -174,7 +221,8 @@ function process_fmri_step2(){
 
 }
 
-#setup and input
+######################################## Main ########################################
+### Setup and input ###
 if (($# < 8)); then print_help; exit; fi
 gpu_platform=0
 gpu_device=0
@@ -225,28 +273,31 @@ if [ $? -ne 0 ]; then
 	exit 1;
 fi
 
-
+### Start preprocessing ### 
 process_T1
 status_process_T1=$?
 check_status $status_process_T1
 #If not finished last time to create the final fmri file
 if [ ! -f $fmri_folder/fmri_rpi_aligned_nonlinear_denoising_sm.nii.gz ]; then
-	create_seg_masks &
+    # Parallel running
+	create_masks &
 	pid1=$! &
 	process_fmri_step1 &
 	pid2=$! 
     wait $pid2 
 	status_process_fmri_step1=$? 
 	wait $pid1 
-    status_create_seg_masks=$?
-    check_status $status_create_seg_masks
+    status_create_masks=$?
+    check_status $status_create_masks
     check_status $status_process_fmri_step1
+	# start after create_masks and process_fmri_step1
     process_fmri_step2
-	status_process_fmri_step2=$?
-	check_status $status_process_fmri_step2
+	status_process_fmri_step2=$?	
+    check_status $status_process_fmri_step2
 	
 fi
 
+### Delete unneccesary files to preserve space ###
 echo 'Deleting unneccesary files'
 if [ -f $fmri_folder/fmri_rpi_aligned_linear.nii ]; then
 	rm $fmri_folder/fmri_rpi_aligned_linear.nii
@@ -264,4 +315,6 @@ fi
 
 duration=$SECONDS
 echo "$(($duration / 60)) minutes and $((duration % 60)) seconds elapsed"
+
+######################################## Main ########################################
 
