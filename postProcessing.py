@@ -218,7 +218,7 @@ if __name__ == "__main__":
 
 
 	# Init multiprocessing.Pool()
-    pool = mp.Pool(5)
+    pool = mp.Pool(15)
     i=0
     # For each subject run the postprocessing steps
     for subject_folder in os.listdir(preproc_folder):
