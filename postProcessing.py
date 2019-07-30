@@ -84,23 +84,22 @@ def perform_scrubbing(motion_files):
         final_indexes = np.append(final_indexes,left_indexes[:count_five])
     return (final_indexes)
     
-def postProcessing(rs_files, motion_files, subject_folder, spheres_masker):
+def postProcessing(rs_files, motion_files, subject_key, spheres_masker):
     """Perform post processing
 	param rs_files: list. rs files paths 
     param motion_files: list. motion files paths
-    param subject_folder: string. full path of the subject's folder
+    param subject_key: string. subject's key
 	return: dictionary raw. 
 		key: subject's key . 
 		value: {"time_series" : matrix of time series after censoring (time_points, power_rois), "covariance" : covariance matrix of power rois (power_rois, power_rois),
 			"correlation" : correlation matrix of power rois (power_rois, power_rois), "num_of_volumes" : num of volumes left after censoring}
     """
     try:
-        print ("subject_folder: " + subject_folder) 
+        print ("subject_key: " + subject_key) 
         print("Extract timeseries")  
         timeseries_all = []
         for rs_file in rs_files:
 		    # Extract the time series
-            print ("rs_file: ", rs_file) 
             timeseries = spheres_masker.fit_transform(rs_file, confounds=None)
             #Remove the first 16 volumes
             timeseries = np.delete(timeseries, range(16), axis = 0)
@@ -119,9 +118,7 @@ def postProcessing(rs_files, motion_files, subject_folder, spheres_masker):
             print("Extract correlation matrix")
             cor = nilearn.connectome.cov_to_corr(cov)
     except:
-        raise Exception( "subject_folder: %s \n" % subject_folder + str(sys.exc_info()[1])).with_traceback(sys.exc_info()[2])
-    #get only the subject key from full path
-    subject_key = subject_folder.split("\\")[-1]
+        raise Exception( "subject_key: %s \n" % subject_key + str(sys.exc_info()[1])).with_traceback(sys.exc_info()[2])
     return (subject_key, {"time_series" : timeseries_censored, "covariance" : cov, "correlation" : cor, "num_of_volumes" : num_of_left_volumes})
 	
 
@@ -229,9 +226,9 @@ if __name__ == "__main__":
         rs_files=[]
         motion_files=[]
         if (subject_folder not in allParticipantsDic):
-	        subject_folder = os.path.join(preproc_folder,subject_folder)
-	        if(os.path.isdir(subject_folder)):
-		        for root, dirs, files in os.walk(subject_folder):
+	        subject_folder_full = os.path.join(preproc_folder,subject_folder)
+	        if(os.path.isdir(subject_folder_full)):
+		        for root, dirs, files in os.walk(subject_folder_full):
 			        for sub_folder in dirs:
 				        rs_folder = os.path.abspath(os.path.join(preproc_folder,subject_folder,sub_folder))
 				        motion_files.append(os.path.abspath(os.path.join(rs_folder, "motionparameters_filtered.backdif.1D")))
