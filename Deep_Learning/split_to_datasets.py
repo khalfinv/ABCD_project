@@ -44,7 +44,7 @@ if __name__ == "__main__":
 	for i, row in df.iterrows(): 
 		df.at[i,'SUBJECTKEY'] = re.sub(r"[^a-zA-Z0-9]","",df.at[i,'SUBJECTKEY'])
 
-	train_set = screateTimeSeriesSets(train_dict, df, args.score_key)
+	train_set = createTimeSeriesSets(train_dict, df, args.score_key)
 	validate_set = createTimeSeriesSets(validate_dict, df, args.score_key)
 	test_set = createTimeSeriesSets(test_dict, df, args.score_key)
 	

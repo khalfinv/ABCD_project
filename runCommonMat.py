@@ -184,9 +184,6 @@ def runSomeNetworks(common_cov_mat,common_cor_mat,out_folder, networks , coords)
              	common_cov_mat_sliced.min(), common_cov_mat_sliced.max())
     analyzeCorrelationsAndPlotConnectome(common_cor_mat_sliced, coords_sliced, networks, out_folder)
 
-
-				   
-
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--out_folder', required=True, type=str, help='output folder for common matrices pkl file (if generated) and plots')
@@ -225,18 +222,20 @@ if __name__ == "__main__":
 		pkl_file = open(args.common_mat_pkl, 'rb')
 		(common_cov_mat, common_cor_mat) = pickle.load(pkl_file)
 		pkl_file.close()
-
-	#extract coordinates from power atlas
-	mniCoordsFile = open(args.atlas,"rb")
-	coords = []
-	for line in mniCoordsFile.read().splitlines():
-		splitedLine = line.decode().split(' ')
-		newCoord = []
-		for part in splitedLine:
-			if part is not '':
-				newCoord.append(float(part))
-		coords.append(newCoord)
-	mniCoordsFile.close()
+	
+	
+	if args.atlas != None:
+		#extract coordinates from power atlas
+		mniCoordsFile = open(args.atlas,"rb")
+		coords = []
+		for line in mniCoordsFile.read().splitlines():
+			splitedLine = line.decode().split(' ')
+			newCoord = []
+			for part in splitedLine:
+				if part is not '':
+					newCoord.append(float(part))
+			coords.append(newCoord)
+		mniCoordsFile.close()
 
 	if (args.networks != None):
 		if(args.networks == ["all"]):
