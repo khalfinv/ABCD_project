@@ -6,13 +6,12 @@ import torch.utils.data as data
 import pandas as pd
 import math
 from sklearn.metrics import r2_score
-from sklearn.metrics import explained_variance_score
 import common
 import matplotlib
 import matplotlib.pyplot as plt
 
 # Hyper Parameters
-num_epochs = 20
+num_epochs = 5
 batch_size = 20
 learning_rate = 0.001
 
@@ -40,23 +39,24 @@ def trainFunc(net, train_loader, criterion, optimizer):
 	scores_all = torch.zeros(0).float()
 	for i, (time_series, scores) in enumerate(train_loader):
 		time_series = time_series.unsqueeze(1)
-		time_series = to_cuda(time_series)
-		scores = to_cuda(scores)
+		time_series = common.to_cuda(time_series)
+		scores = common.to_cuda(scores)
 		
 		# Forward + Backward + Optimize
 		optimizer.zero_grad()
 		outputs = net(time_series)
+		scores = scores.view(-1,1)
 		loss = criterion(outputs, scores.float())
 		loss.backward()
 		optimizer.step()
 		lossSum += loss.item()
-		outputs_all = torch.cat([outputs_all, outputs.reshape(-1)])
-		scores_all = torch.cat([scores_all, scores.float()])
+		outputs_all = torch.cat([outputs_all, outputs.reshape(-1).cpu()])
+		scores_all = torch.cat([scores_all, scores.float().cpu()])
 		
 		if (i+1) % 5 == 0:
 			print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f'
 				   %(epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, loss.item()))
-	r_squared = explained_variance_score(scores_all.tolist(),outputs_all.tolist()) 
+	r_squared = r2_score(scores_all.tolist(),outputs_all.tolist()) 
 	return (lossSum / i), r_squared 
 
 def evaluateFunc(net, validate_loader, criterion):
@@ -66,13 +66,15 @@ def evaluateFunc(net, validate_loader, criterion):
 	scores_all = torch.zeros(0).float()
 	for i, (time_series, scores) in enumerate(validate_loader):
 		time_series = time_series.unsqueeze(1)
-		time_series = to_cuda(time_series)
+		time_series = common.to_cuda(time_series)
+		scores = to_cuda(scores)
 		outputs = net(time_series)
-		loss = criterion(outputs.cpu(), scores.float())
+		scores = scores.view(-1,1)
+		loss = criterion(outputs, scores.float())
 		lossSum += loss.item()
-		outputs_all = torch.cat([outputs_all, outputs.reshape(-1)])
-		scores_all = torch.cat([scores_all, scores.float()])
-	r_squared = explained_variance_score(scores_all.tolist(),outputs_all.tolist()) 
+		outputs_all = torch.cat([outputs_all, outputs.reshape(-1).cpu()])
+		scores_all = torch.cat([scores_all, scores.float().cpu()])
+	r_squared = r2_score(scores_all.tolist(),outputs_all.tolist()) 
 	return (lossSum / i), r_squared	
 	
 
@@ -83,13 +85,6 @@ if __name__ == "__main__":
 	parser.add_argument('--out_folder', required=True, help='path to folder where to save the model')
 	args = parser.parse_args()
 
-
-	#This function enable the model to run in cpu and gpu
-	use_gpu = torch.cuda.is_available()		
-	def to_cuda(x):
-		if use_gpu:
-			x = x.cuda()
-		return x
 
 	train_dataset = common.TimeseriesDataset(os.path.join(args.data_folder,"train_set.pkl"))
 		
@@ -110,7 +105,7 @@ if __name__ == "__main__":
 											   
 	#create object of the ABCD_Net class
 	net = common.ABCD_Net()
-	net = to_cuda(net)
+	net = common.to_cuda(net)
 	# Loss and Optimizer
 	criterion = nn.MSELoss()
 	optimizer = torch.optim.Adam(net.parameters(),lr = learning_rate)
@@ -136,7 +131,7 @@ if __name__ == "__main__":
 	plotGraph('Error vs Epoch', range(num_epochs), trainErrArr, evaluateErrArr, 'Epoch', 'Error', 'errPlot.png')
 	#loss vs epoch
 	trainLossArr = [round(loss,3) for loss in trainLossArr]
-	testLossArr = [round(loss,3) for loss in testLossArr]
+	testLossArr = [round(loss,3) for loss in evaluateLossArr]
 	plotGraph('Loss vs Epoch', range(num_epochs), trainLossArr, evaluateLossArr, 'Epoch', 'Loss', 'lossPlot.png')
 
 
