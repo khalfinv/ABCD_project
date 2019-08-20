@@ -1,5 +1,8 @@
 import torch	
 import argparse
+import common
+import os
+from sklearn.metrics import r2_score
 		   
 def load_checkpoint(model,filepath):
     # "lambda" allows to load the model on cpu in case it is saved on gpu
@@ -14,11 +17,11 @@ def testFunc(cnn, test_loader):
 	scores_all = torch.zeros(0).float()
 	for i, (time_series, scores) in enumerate(test_loader):
 		time_series = time_series.unsqueeze(1)
-		time_series = to_cuda(time_series)
+		time_series = common.to_cuda(time_series)
 		outputs = cnn(time_series)
 		outputs_all = torch.cat([outputs_all, outputs.reshape(-1)])
 		scores_all = torch.cat([scores_all, scores.float()])
-	r_squared = explained_variance_score(scores_all.tolist(),outputs_all.tolist()) 
+	r_squared = r2_score(scores_all.tolist(),outputs_all.tolist()) 
 	return r_squared
 	
 if __name__ == "__main__":
@@ -27,15 +30,14 @@ if __name__ == "__main__":
 	parser.add_argument('--model', required=True, help='path to the model after training')
 	args = parser.parse_args()
 	
-	test_dataset = TimeseriesDataset(os.path.join(args.data_folder,"test_set.pkl"))
+	test_dataset = common.TimeseriesDataset(os.path.join(args.data_folder,"test_set.pkl"))
 	
 	test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-											   batch_size=batch_size,
 											   shuffle=False)
-	net = deep.CNN()
+	net = common.ABCD_Net()
 	#load the model						   
 	net = load_checkpoint(net, args.model)
-	net = deep.to_cuda(net)
+	net = common.to_cuda(net)
 	# Test the Model
 	testErr = testFunc(net, test_loader)
 	print (testErr)

@@ -29,7 +29,11 @@ if __name__ == "__main__":
     pkl_file = open(args.subjects_data_dict, 'rb')
     allParticipantsDic = pickle.load(pkl_file)
     pkl_file.close()
+    num_excluded = 0
+    print ("Total number of subjects: ", len(allParticipantsDic))
     for key,val in allParticipantsDic.items():
         if val["num_of_volumes"] < args.exclusion_criteria:
             excluded_subjects_file.write(key + "\n")
+            num_excluded = num_excluded + 1
     excluded_subjects_file.close()  
+    print ("Total number of excluded subjects: ", num_excluded)

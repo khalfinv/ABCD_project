@@ -53,4 +53,10 @@ class TimeseriesDataset(data.Dataset):
 		time_series, scores = self.time_series[idx], self.scores[idx]
 		return time_series, scores
 
+#This function enable the model to run in cpu and gpu	
+def to_cuda(x):
+	use_gpu = torch.cuda.is_available()	
+	if use_gpu:
+		x = x.cuda()
+	return x
 	
