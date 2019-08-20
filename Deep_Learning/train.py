@@ -67,7 +67,7 @@ def evaluateFunc(net, validate_loader, criterion):
 	for i, (time_series, scores) in enumerate(validate_loader):
 		time_series = time_series.unsqueeze(1)
 		time_series = common.to_cuda(time_series)
-		scores = to_cuda(scores)
+		scores = common.to_cuda(scores)
 		outputs = net(time_series)
 		scores = scores.view(-1,1)
 		loss = criterion(outputs, scores.float())
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 	
 	#plot graphs
 	#err vs epoch
-	plotGraph('Error vs Epoch', range(num_epochs), trainErrArr, evaluateErrArr, 'Epoch', 'Error', 'errPlot.png')
+	plotGraph('Error vs Epoch', range(num_epochs), trainErrArr, evaluateErrArr, 'Epoch', 'R-Square', 'rSquarePlot.png')
 	#loss vs epoch
 	trainLossArr = [round(loss,3) for loss in trainLossArr]
 	testLossArr = [round(loss,3) for loss in evaluateLossArr]
