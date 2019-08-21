@@ -22,7 +22,7 @@ def testFunc(cnn, test_loader):
 		outputs_all = torch.cat([outputs_all, outputs.reshape(-1)])
 		scores_all = torch.cat([scores_all, scores.float()])
 	r_squared = r2_score(scores_all.tolist(),outputs_all.tolist()) 
-	return r_squared
+	return r_squared * 100
 	
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
