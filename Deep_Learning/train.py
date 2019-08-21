@@ -57,7 +57,7 @@ def trainFunc(net, train_loader, criterion, optimizer):
 			print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f'
 				   %(epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, loss.item()))
 	r_squared = r2_score(scores_all.tolist(),outputs_all.tolist()) 
-	return (lossSum / i), r_squared 
+	return (lossSum / i), r_squared * 100 
 
 def evaluateFunc(net, validate_loader, criterion):
 	lossSum = 0 # sum of all loss 
@@ -75,7 +75,7 @@ def evaluateFunc(net, validate_loader, criterion):
 		outputs_all = torch.cat([outputs_all, outputs.reshape(-1).cpu()])
 		scores_all = torch.cat([scores_all, scores.float().cpu()])
 	r_squared = r2_score(scores_all.tolist(),outputs_all.tolist()) 
-	return (lossSum / i), r_squared	
+	return (lossSum / i), r_squared * 100	
 	
 
 if __name__ == "__main__":
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 										   
 											   
 	#create object of the ABCD_Net class
-	net = common.ABCD_Net()
+	net = common.FeatureExtractor()
 	net = common.to_cuda(net)
 	# Loss and Optimizer
 	criterion = nn.MSELoss()
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 	
 	#plot graphs
 	#err vs epoch
-	plotGraph('Error vs Epoch', range(num_epochs), trainErrArr, evaluateErrArr, 'Epoch', 'R-Square', 'rSquarePlot.png')
+	plotGraph('explained variance vs Epoch', range(num_epochs), trainErrArr, evaluateErrArr, 'Epoch', 'Explained Variance', 'explainedVarPlot.png')
 	#loss vs epoch
 	trainLossArr = [round(loss,3) for loss in trainLossArr]
 	testLossArr = [round(loss,3) for loss in evaluateLossArr]

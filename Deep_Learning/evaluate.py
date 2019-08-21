@@ -34,7 +34,7 @@ if __name__ == "__main__":
 	
 	test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 											   shuffle=False)
-	net = common.ABCD_Net()
+	net = common.FeatureExtractor()
 	#load the model						   
 	net = load_checkpoint(net, args.model)
 	net = common.to_cuda(net)
