@@ -11,7 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # Hyper Parameters
-num_epochs = 5
+num_epochs = 50
 batch_size = 20
 learning_rate = 0.001
 
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 	
 	#plot graphs
 	#err vs epoch
-	plotGraph('Error vs Epoch', range(num_epochs), trainErrArr, evaluateErrArr, 'Epoch', 'R-Square', 'rSquarePlot.png')
+	plotGraph('R_squrae vs Epoch', range(num_epochs), trainErrArr, evaluateErrArr, 'Epoch', 'R-Square', 'rSquarePlot.png')
 	#loss vs epoch
 	trainLossArr = [round(loss,3) for loss in trainLossArr]
 	testLossArr = [round(loss,3) for loss in evaluateLossArr]
