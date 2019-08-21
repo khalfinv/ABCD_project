@@ -5,33 +5,39 @@ import os, sys, pickle
 
 
 # define a model:
-class ABCD_Net(nn.Module):
+class FeatureExtractor(nn.Module):
     def __init__(self):
-        super(ABCD_Net, self).__init__()
+        super(FeatureExtractor, self).__init__()
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 8, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.BatchNorm2d(8))
+            nn.Conv2d(1, 32, kernel_size=3),
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(2))
         self.layer2 = nn.Sequential(
-            nn.Conv2d(8, 16, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.BatchNorm2d(16),
-            nn.Dropout(p=0.2))
+            nn.Conv2d(32, 64, kernel_size=3),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(2))
         self.layer3 = nn.Sequential(
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.BatchNorm2d(32))
+            nn.Conv2d(64, 96, kernel_size=3),
+            nn.BatchNorm2d(96),
+            nn.LeakyReLU())
+        self.layer4 = nn.Sequential(
+            nn.Conv2d(96, 64, kernel_size=3))
+        self.layer5 = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size=3),
+			nn.MaxPool2d(2))
         self.fc1 = nn.Sequential(
-            nn.Linear(93*66*32, 1),
+            nn.Linear( 29*43*64, 1),
             nn.ReLU())
     
     def forward(self, x):
         out = self.layer1(x)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = out.view(out.size(0), -1)
+        out = self.layer4(out)
+        out = self.layer5(out)
+        out = out.view(out.size(0), -1)                                                  
         out = self.fc1(out)
         return out
 		
