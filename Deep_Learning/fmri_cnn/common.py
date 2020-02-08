@@ -22,7 +22,8 @@ class fMRI_CNN(nn.Module):
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.LeakyReLU(),
             nn.MaxPool2d(2),
-            nn.BatchNorm2d(32))
+            nn.BatchNorm2d(32),
+            nn.Dropout(p=0.2))
         self.layer4 = nn.Sequential(
             nn.Conv2d(32, 48, kernel_size=3, padding=1),
             nn.LeakyReLU(),
@@ -32,19 +33,26 @@ class fMRI_CNN(nn.Module):
             nn.Conv2d(48, 68, kernel_size=1, padding=0),
             nn.LeakyReLU(),
             nn.MaxPool2d(2),
-            nn.BatchNorm2d(68))
+            nn.BatchNorm2d(68),
+            nn.Dropout(p=0.2))
         self.layer6 = nn.Sequential(
             nn.Conv2d(68, 88, kernel_size=1, padding=0),
             nn.LeakyReLU(),
             nn.BatchNorm2d(88),
             nn.Dropout(p=0.2))
         self.layer7 = nn.Sequential(
-            nn.Conv2d(88, 128, kernel_size=1, padding=0),
+            nn.Conv2d(88, 108, kernel_size=1, padding=0),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(108),
+            nn.MaxPool2d(2),
+            nn.Dropout(p=0.2))
+        self.layer8 = nn.Sequential(
+            nn.Conv2d(108, 128, kernel_size=1, padding=0),
             nn.LeakyReLU(),
             nn.BatchNorm2d(128),
             nn.MaxPool2d(2))
         self.fc1 = nn.Sequential(
-            nn.Linear(16*23*128, 3),
+            nn.Linear(8*11*128, 3),
             nn.LeakyReLU())
         self.logsoftmax = nn.LogSoftmax(dim=1)
     
@@ -56,9 +64,10 @@ class fMRI_CNN(nn.Module):
         out = self.layer5(out)
         out = self.layer6(out)
         out = self.layer7(out)
+        out = self.layer8(out)
+        #print ("out", out.size())
         out = out.view(out.size(0), -1)
         out = self.fc1(out)
-        #print ("out", out)
         return self.logsoftmax(out)
 		
 class TimeseriesDataset(data.Dataset):
@@ -81,9 +90,10 @@ class TimeseriesDataset(data.Dataset):
 		
 #This function enable the model to run in cpu and gpu	
 def to_cuda(x):
-	use_gpu = torch.cuda.is_available()	
-	if use_gpu:
-		x = x.cuda()
-	return x
+    use_gpu = torch.cuda.is_available()	
+    device = torch.device("cuda:0")
+    if use_gpu:
+        x = x.to(device)
+    return x
 
 	

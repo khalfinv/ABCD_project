@@ -46,7 +46,7 @@ def trainFunc(net, train_loader, criterion, optimizer):
 		optimizer.zero_grad()
 		outputs = net(time_series)
 		#print("outputs:", outputs)
-		loss = criterion(outputs.cpu(), scores)
+		loss = criterion(outputs, scores)
 		loss.backward()
 		optimizer.step()
 		lossSum += loss.item()
@@ -80,58 +80,60 @@ def evaluateFunc(net, validate_loader, criterion):
 
 if __name__ == "__main__":
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--data_folder', required=True, help='path to folder contaning all the data - train, validate and test')
-	parser.add_argument('--out_folder', required=True, help='path to folder where to save the model')
-	args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_folder', required=True, help='path to folder contaning all the data - train, validate and test')
+    parser.add_argument('--out_folder', required=True, help='path to folder where to save the model')
+    args = parser.parse_args()
 
 
-	train_dataset = common.TimeseriesDataset(os.path.join(args.data_folder,"train_set_class.pkl"))
-		
-	validate_dataset = common.TimeseriesDataset(os.path.join(args.data_folder,"validate_set_class.pkl"))
+    train_dataset = common.TimeseriesDataset(os.path.join(args.data_folder,"train_set_class.pkl"))
+        
+    validate_dataset = common.TimeseriesDataset(os.path.join(args.data_folder,"validate_set_class.pkl"))
 
 
-	time_series, _, = train_dataset[10]
+    time_series, _, = train_dataset[10]
 
-	train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
-											   batch_size=batch_size,
-											   shuffle=True)
-											  
-	validate_loader = torch.utils.data.DataLoader(dataset=validate_dataset,
-										   batch_size=batch_size,
-										   shuffle=False)
+    train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                               batch_size=batch_size,
+                                               shuffle=True)
+                                              
+    validate_loader = torch.utils.data.DataLoader(dataset=validate_dataset,
+                                           batch_size=batch_size,
+                                           shuffle=False)
 										   
 											   
-	#create object of the fMRI_CNN class
-	fMRI_CNN = common.fMRI_CNN()
-	fMRI_CNN = common.to_cuda(fMRI_CNN)
-	# Loss and Optimizer
-	criterion = nn.NLLLoss()
-	optimizer = torch.optim.Adam(fMRI_CNN.parameters(),lr = learning_rate)
-	trainLossArr = []
-	trainErrArr = []
-	evaluateLossArr = []
-	evaluateErrArr = []
-	#Iterate num_epoch times and in each epoch train on total data amount / batch_size
-	for epoch in range(num_epochs):
-		trainLoss, trainErr = trainFunc(fMRI_CNN, train_loader, criterion, optimizer)
-		evaluateLoss, evaluateErr  = evaluateFunc(fMRI_CNN, validate_loader, criterion)
-		
-		trainLossArr.append(trainLoss)
-		trainErrArr.append(trainErr)
-		evaluateLossArr.append(evaluateLoss)
-		evaluateErrArr.append(evaluateErr)
-	
-	#Save the Model
-	save_checkpoint(fMRI_CNN, os.path.join(args.out_folder, "fMRI_CNN_model.pkl"))
-	
-	#plot graphs
-	#err vs epoch
-	plotGraph('Error vs Epoch', range(num_epochs), trainErrArr, evaluateErrArr, 'Epoch', 'Error', 'errPlot.png')
-	#loss vs epoch
-	trainLossArr = [round(loss,3) for loss in trainLossArr]
-	testLossArr = [round(loss,3) for loss in evaluateLossArr]
-	plotGraph('Loss vs Epoch', range(num_epochs), trainLossArr, evaluateLossArr, 'Epoch', 'Loss', 'lossPlot.png')
+    #create object of the fMRI_CNN class
+    fMRI_CNN = common.fMRI_CNN()
+    # if torch.cuda.device_count() > 1:
+        # fMRI_CNN = nn.DataParallel(fMRI_CNN)
+    fMRI_CNN = common.to_cuda(fMRI_CNN)
+    # Loss and Optimizer
+    criterion = nn.NLLLoss()
+    optimizer = torch.optim.Adam(fMRI_CNN.parameters(),lr = learning_rate)
+    trainLossArr = []
+    trainErrArr = []
+    evaluateLossArr = []
+    evaluateErrArr = []
+    #Iterate num_epoch times and in each epoch train on total data amount / batch_size
+    for epoch in range(num_epochs):
+        trainLoss, trainErr = trainFunc(fMRI_CNN, train_loader, criterion, optimizer)
+        evaluateLoss, evaluateErr  = evaluateFunc(fMRI_CNN, validate_loader, criterion)
+        
+        trainLossArr.append(trainLoss)
+        trainErrArr.append(trainErr)
+        evaluateLossArr.append(evaluateLoss)
+        evaluateErrArr.append(evaluateErr)
+
+    #Save the Model
+    save_checkpoint(fMRI_CNN, os.path.join(args.out_folder, "fMRI_CNN_model.pkl"))
+
+    #plot graphs
+    #err vs epoch
+    plotGraph('Error vs Epoch', range(num_epochs), trainErrArr, evaluateErrArr, 'Epoch', 'Error', os.path.join(args.out_folder, "errPlot.png"))
+    #loss vs epoch
+    trainLossArr = [round(loss,3) for loss in trainLossArr]
+    testLossArr = [round(loss,3) for loss in evaluateLossArr]
+    plotGraph('Loss vs Epoch', range(num_epochs), trainLossArr, evaluateLossArr, 'Epoch', 'Loss', os.path.join(args.out_folder, "lossPlot.png"))
 
 
 	

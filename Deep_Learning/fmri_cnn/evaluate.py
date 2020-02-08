@@ -10,22 +10,19 @@ def load_checkpoint(model,filepath):
     return model
 
 	
-def testFunc(net, test_loader):
-	lossSum = 0 # sum of all loss 
-	errSum = 0 # sum of all error rates 
-	total = 0 # sum of total scores 
-	net.eval() # turning the network to evaluation mode, affect dropout and batch-norm layers if exists
-	for i, (time_series, scores) in enumerate(validate_loader):
-		time_series = time_series.unsqueeze(1)
-		time_series = common.to_cuda(time_series)
-		outputs = net(time_series)
-		loss = criterion(outputs.cpu(), scores)
-		lossSum += loss.item()
-		_, predicted = torch.max(outputs, 1)		
-		total += scores.size(0)
-		errSum += (predicted.cpu() != scores).sum()
-	#return the average loss and average error
-	return ((lossSum / i), (100*float(errSum)/total)) 
+def testFunc(net, test_loader): 
+    total = 0 # sum of total scores 
+    correct = 0
+    net.eval() # turning the network to evaluation mode, affect dropout and batch-norm layers if exists
+    for i, (time_series, scores) in enumerate(test_loader):
+        time_series = time_series.unsqueeze(1)
+        time_series = common.to_cuda(time_series)
+        outputs = net(time_series)
+        _, predicted = torch.max(outputs, 1)		
+        total += scores.size(0)
+        correct += (predicted.cpu() == scores).sum()
+    accuracy = (100*float(correct)/total)
+    return accuracy
 	
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
