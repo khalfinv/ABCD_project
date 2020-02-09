@@ -87,23 +87,6 @@ class ClassificationNet(nn.Module):
 		out = self.fc4(out)
 		return self.logsoftmax(out)
 		
-		
-def forward(self, x):
-	print("FeatureExtractor x", x.size())
-	out = self.layer1(x)
-	#print("FeatureExtractor layer1", out.size())
-	out = self.layer2(out)
-	#print("FeatureExtractor layer2", out.size())
-	out = self.layer3(out)
-	#print("FeatureExtractor layer3", out.size())
-	out = self.layer4(out)
-	#print("FeatureExtractor layer4", out.size())
-	out = self.layer5(out)
-	#print("FeatureExtractor layer5", out.size())
-	out = out.view(out.size(0), -1)                                                  
-	out = self.fc1(out)
-	#print("FeatureExtractor fc", out.size())
-	return out
 
 		
 class SimilarityMeasureNetwork(nn.Module):
@@ -149,11 +132,12 @@ class TimeseriesDataset(data.Dataset):
 	def __getitem__(self, idx):
 		time_series, scores = self.time_series[idx], self.scores[idx]
 		return time_series, scores
-
+	
 #This function enable the model to run in cpu and gpu	
 def to_cuda(x):
-	use_gpu = torch.cuda.is_available()	
-	if use_gpu:
-		x = x.cuda()
-	return x
+    use_gpu = torch.cuda.is_available()	
+    device = torch.device("cuda:1")
+    if use_gpu:
+        x = x.to(device)
+    return x
 	

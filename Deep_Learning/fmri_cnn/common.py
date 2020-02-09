@@ -6,69 +6,74 @@ import os, sys, pickle
 
 # define a model:
 class fMRI_CNN(nn.Module):
-    def __init__(self):
-        super(fMRI_CNN, self).__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 8, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(2),
-            nn.BatchNorm2d(8))
-        self.layer2 = nn.Sequential(
-            nn.Conv2d(8, 16, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.BatchNorm2d(16),
-            nn.Dropout(p=0.2))
-        self.layer3 = nn.Sequential(
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(2),
-            nn.BatchNorm2d(32),
-            nn.Dropout(p=0.2))
-        self.layer4 = nn.Sequential(
-            nn.Conv2d(32, 48, kernel_size=3, padding=1),
-            nn.LeakyReLU(),
-            nn.BatchNorm2d(48),
-            nn.Dropout(p=0.2))
-        self.layer5 = nn.Sequential(
-            nn.Conv2d(48, 68, kernel_size=1, padding=0),
-            nn.LeakyReLU(),
-            nn.MaxPool2d(2),
-            nn.BatchNorm2d(68),
-            nn.Dropout(p=0.2))
-        self.layer6 = nn.Sequential(
-            nn.Conv2d(68, 88, kernel_size=1, padding=0),
-            nn.LeakyReLU(),
-            nn.BatchNorm2d(88),
-            nn.Dropout(p=0.2))
-        self.layer7 = nn.Sequential(
-            nn.Conv2d(88, 108, kernel_size=1, padding=0),
-            nn.LeakyReLU(),
-            nn.BatchNorm2d(108),
-            nn.MaxPool2d(2),
-            nn.Dropout(p=0.2))
-        self.layer8 = nn.Sequential(
-            nn.Conv2d(108, 128, kernel_size=1, padding=0),
-            nn.LeakyReLU(),
-            nn.BatchNorm2d(128),
-            nn.MaxPool2d(2))
-        self.fc1 = nn.Sequential(
-            nn.Linear(8*11*128, 3),
-            nn.LeakyReLU())
-        self.logsoftmax = nn.LogSoftmax(dim=1)
-    
-    def forward(self, x):
-        out = self.layer1(x)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = self.layer4(out)
-        out = self.layer5(out)
-        out = self.layer6(out)
-        out = self.layer7(out)
-        out = self.layer8(out)
-        #print ("out", out.size())
-        out = out.view(out.size(0), -1)
-        out = self.fc1(out)
-        return self.logsoftmax(out)
+	def __init__(self):
+		super(fMRI_CNN, self).__init__()
+		self.layer1 = nn.Sequential(
+			nn.Conv2d(1, 8, kernel_size=5),
+			nn.ReLU(),
+			nn.BatchNorm2d(8))
+		self.layer2 = nn.Sequential(
+			nn.Conv2d(8, 8, kernel_size=3),
+			nn.ReLU(),
+			nn.BatchNorm2d(8))
+		self.layer3 = nn.Sequential(
+			nn.Conv2d(8, 8, kernel_size=1),
+			nn.ReLU(),
+			nn.BatchNorm2d(8),
+			nn.MaxPool2d(2))
+		self.layer4 = nn.Sequential(
+			nn.Conv2d(8, 16, kernel_size=5),
+			nn.ReLU(),
+			nn.BatchNorm2d(16))
+		self.layer5 = nn.Sequential(
+			nn.Conv2d(16, 16, kernel_size=3),
+			nn.ReLU(),
+			nn.BatchNorm2d(16))
+		self.layer6 = nn.Sequential(
+			nn.Conv2d(16, 16, kernel_size=1),
+			nn.ReLU(),
+			nn.BatchNorm2d(16),
+			nn.MaxPool2d(2))
+		self.layer7 = nn.Sequential(
+			nn.Conv2d(16, 32, kernel_size=5),
+			nn.ReLU(),
+			nn.BatchNorm2d(32))
+		self.layer8 = nn.Sequential(
+			nn.Conv2d(32, 32, kernel_size=3),
+			nn.ReLU(),
+			nn.BatchNorm2d(32))
+		self.layer9 = nn.Sequential(
+			nn.Conv2d(32, 32, kernel_size=1),
+			nn.ReLU(),
+			nn.BatchNorm2d(32),
+			nn.Dropout(p=0.3))
+		self.fc1 = nn.Sequential(
+			nn.Linear(83*55*32, 14608),
+			nn.LeakyReLU())
+		self.fc2 = nn.Sequential(
+			nn.Linear(14608, 1460),
+			nn.LeakyReLU())
+		self.fc3 = nn.Sequential(
+			nn.Linear(1460, 3),
+			nn.LeakyReLU())
+		self.logsoftmax = nn.LogSoftmax(dim=1)
+
+	def forward(self, x):
+		out = self.layer1(x)
+		out = self.layer2(out)
+		out = self.layer3(out)
+		out = self.layer4(out)
+		out = self.layer5(out)
+		out = self.layer6(out)
+		out = self.layer7(out)
+		out = self.layer8(out)
+		out = self.layer9(out)
+		print ("out", out.size())
+		out = out.view(out.size(0), -1)
+		out = self.fc1(out)
+		out = self.fc2(out)
+		out = self.fc3(out)
+		return self.logsoftmax(out)
 		
 class TimeseriesDataset(data.Dataset):
 	def __init__(self, dataset_path):
