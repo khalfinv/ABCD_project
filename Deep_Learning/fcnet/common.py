@@ -7,36 +7,35 @@ import math
 
 # define a model:
 class DeepFCNet(nn.Module):
-	def __init__(self):
-		super(DeepFCNet, self).__init__()
-		self.feature_extractor = FeatureExtractor(375,32)
-		self.similarity_measure = SimilarityMeasureNetwork()
-		self.classification_net = ClassificationNet(34716,3)
+    def __init__(self):
+        super(DeepFCNet, self).__init__()
+        self.feature_extractor = FeatureExtractor(375,32)
+        self.similarity_measure = SimilarityMeasureNetwork()
+        self.classification_net = ClassificationNet(34716,3)
 		
 		
-	def forward(self, x):
-		print ("x:", x.size())
-		subjects = torch.zeros(0)
-		for subject in x:
-			out = self.feature_extractor(subject[0])
-			out = torch.unsqueeze(out,dim=0)
-			for net in subject[1:]:
-				new_net = self.feature_extractor(net)
-				new_net = torch.unsqueeze(new_net,dim=0)				
-				out = torch.cat([out,new_net],dim=0)
-			print ("out:", out.size())
-			fc_all = torch.zeros(0)
-			for net1_index in range(out.size(0)):
-				for net2_index in range(net1_index+1,out.size(0)):
-					two_nets=torch.cat([out[net1_index],out[net2_index]],dim=0)
-					#print("two_nets",two_nets.size())
-					fc_out=self.similarity_measure(two_nets)
-					fc_all = torch.cat([fc_all,fc_out],dim=0)
-			#print("fc_all:", fc_all)
-			fc_all = torch.unsqueeze(fc_all,dim=0)			
-			subjects = torch.cat([subjects,fc_all],dim=0)
-			print("subjects",subjects.size())
-		return self.classification_net(subjects)
+    def forward(self, x):
+        print ("x:", x.size())
+        subjects = torch.zeros(0)
+        for subject in x:
+            out = torch.zeros(0)
+            subject = subject.view(264,375)
+            for net in subject:
+                new_net = self.feature_extractor(net)
+                new_net = torch.unsqueeze(new_net,dim=0)				
+                out = torch.cat([out,new_net.cpu()],dim=0)
+            print ("out:", out.size())
+            fc_all = torch.zeros(0)
+            for net1_index in range(out.size(0)):
+                for net2_index in range(net1_index+1,out.size(0)):
+                    two_nets=torch.cat([out[net1_index],out[net2_index]],dim=0)
+                    fc_out=self.similarity_measure(to_cuda(two_nets))
+                    fc_all = torch.cat([fc_all,fc_out.cpu()],dim=0)
+            print("fc_all:", fc_all.size())
+            fc_all = torch.unsqueeze(fc_all,dim=0)			
+            subjects = torch.cat([subjects,fc_all],dim=0)
+            print("subjects",subjects.size())
+        return self.classification_net(to_cuda(subjects))
 		
 class FeatureExtractor(nn.Module):
 	def __init__(self, input_size, num_classes):

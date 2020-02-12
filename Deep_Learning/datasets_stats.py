@@ -13,7 +13,7 @@ if __name__ == "__main__":
 	num_of_avg = 0
 	num_of_above_avg = 0
 	for score in dataset[1]:
-		print("score:",score)
+		#print("score:",score)
 		if score == 0:
 			num_of_below_avg+=1
 		elif score == 1:

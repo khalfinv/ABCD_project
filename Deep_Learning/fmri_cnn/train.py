@@ -9,7 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # Hyper Parameters
-num_epochs = 50
+num_epochs = 80
 batch_size = 20
 learning_rate = 0.001
 
@@ -55,7 +55,7 @@ def trainFunc(net, train_loader, criterion, optimizer):
 		#print("predicted:",predicted)
 		errSum += (predicted.cpu() != scores.cpu()).sum()
 		
-		if (i+1) % 2 == 0:
+		if (i+1) % 20 == 0:
 			print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f'
 				   %(epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, loss.item()))
 	return ((lossSum / i), (100*float(errSum)/total)) 
