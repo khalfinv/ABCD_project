@@ -67,17 +67,15 @@ class TimeseriesDataset(data.Dataset):
 		self.scores = []
 		
 		pkl_file = open(dataset_path, 'rb')
-		self.time_series, self.scores = pickle.load(pkl_file)
+		self.subjects = pickle.load(pkl_file)
 		pkl_file.close()
-		
-		self.time_series = [torch.from_numpy(ts) for ts in self.time_series]
 				
 	def __len__(self):
-		return len(self.time_series)
+		return len(self.subjects)
 
 	def __getitem__(self, idx):
-		time_series, scores = self.time_series[idx], self.scores[idx]
-		return time_series, scores
+		time_series, score = self.subjects[idx]
+		return torch.from_numpy(time_series), score
 		
 #This function enable the model to run in cpu and gpu	
 def to_cuda(x):
