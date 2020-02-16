@@ -7,6 +7,7 @@ import pandas as pd
 import common
 import matplotlib
 import matplotlib.pyplot as plt
+import time
 
 # Hyper Parameters
 num_epochs = 50
@@ -32,50 +33,58 @@ def plotGraph(graphLabel, xValues, yValuesTrain, yValuesTest, xLabel, yLabel, ou
 
 	
 def trainFunc(net, train_loader, criterion, optimizer):
-	lossSum = 0 # sum of all loss 
-	errSum = 0 # sum of all error rates 
-	total = 0 # sum of total scores 
-	net.train() # turning the network to training mode, affect dropout and batch-norm layers if exists
-	for i, (time_series, scores) in enumerate(train_loader):
-		time_series = time_series.unsqueeze(1)
-		time_series = common.to_cuda(time_series)
-		scores = common.to_cuda(scores)
-		#print("scores:",scores)
+    lossSum = 0 # sum of all loss 
+    errSum = 0 # sum of all error rates 
+    total = 0 # sum of total scores 
+    net.train() # turning the network to training mode, affect dropout and batch-norm layers if exists
+    for i, (time_series, scores) in enumerate(train_loader):
+        time_series = time_series.unsqueeze(1)
+        time_series = common.to_cuda(time_series)
+        scores = common.to_cuda(scores)
+        end = time.time()
+
+        # Forward + Backward + Optimize
+        optimizer.zero_grad()
+        start = time.time()
+        outputs = net(time_series)
+        end = time.time()
+        timeInSeconds = (end - start)
+        print ("forward Total time : " ,timeInSeconds)	
+        #print("outputs:", outputs)
+        loss = criterion(outputs, scores)
+        start = time.time()
+        loss.backward()
+        end = time.time()
+        timeInSeconds = (end - start)
+        print ("backwards Total time : " ,timeInSeconds)	
+        optimizer.step()
+        lossSum += loss.item()
+        total += scores.size(0)
+        _, predicted = torch.max(outputs, 1)
+        #print("predicted:",predicted)
+        errSum += (predicted.cpu() != scores.cpu()).sum()
 		
-		# Forward + Backward + Optimize
-		optimizer.zero_grad()
-		outputs = net(time_series)
-		#print("outputs:", outputs)
-		loss = criterion(outputs, scores)
-		loss.backward()
-		optimizer.step()
-		lossSum += loss.item()
-		total += scores.size(0)
-		_, predicted = torch.max(outputs, 1)
-		#print("predicted:",predicted)
-		errSum += (predicted.cpu() != scores.cpu()).sum()
-		
-		if (i+1) % 10 == 0:
-			print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f'
-				   %(epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, loss.item()))
-	return ((lossSum / i), (100*float(errSum)/total)) 
+        if (i+1) % 30 == 0:
+            print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f'
+                   %(epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, loss.item()))
+    return ((lossSum / i), (100*float(errSum)/total)) 
 
 def evaluateFunc(net, validate_loader, criterion):
-	lossSum = 0 # sum of all loss 
-	errSum = 0 # sum of all error rates 
-	total = 0 # sum of total scores 
-	net.eval() # turning the network to evaluation mode, affect dropout and batch-norm layers if exists
-	for i, (time_series, scores) in enumerate(validate_loader):
-		time_series = time_series.unsqueeze(1)
-		time_series = common.to_cuda(time_series)
-		outputs = net(time_series)
-		loss = criterion(outputs.cpu(), scores)
-		lossSum += loss.item()
-		_, predicted = torch.max(outputs, 1)		
-		total += scores.size(0)
-		errSum += (predicted.cpu() != scores).sum()
+    lossSum = 0 # sum of all loss 
+    errSum = 0 # sum of all error rates 
+    total = 0 # sum of total scores 
+    net.eval() # turning the network to evaluation mode, affect dropout and batch-norm layers if exists
+    for i, (time_series, scores) in enumerate(validate_loader):
+        time_series = time_series.unsqueeze(1)
+        time_series = common.to_cuda(time_series)
+        outputs = net(time_series)
+        loss = criterion(outputs.cpu(), scores)
+        lossSum += loss.item()
+        _, predicted = torch.max(outputs, 1)		
+        total += scores.size(0)
+        errSum += (predicted.cpu() != scores).sum()
 	#return the average loss and average error
-	return ((lossSum / i), (100*float(errSum)/total)) 
+    return ((lossSum / i), (100*float(errSum)/total)) 
 	
 
 if __name__ == "__main__":
@@ -104,6 +113,8 @@ if __name__ == "__main__":
 											   
     #create object of the fMRI_CNN class
     DeepFCNet = common.DeepFCNet()
+    # if torch.cuda.device_count() > 1:
+        # DeepFCNet = nn.DataParallel(DeepFCNet)
     DeepFCNet = common.to_cuda(DeepFCNet)
     # Loss and Optimizer
     criterion = nn.NLLLoss()
@@ -116,7 +127,6 @@ if __name__ == "__main__":
     for epoch in range(num_epochs):
         trainLoss, trainErr = trainFunc(DeepFCNet, train_loader, criterion, optimizer)
         evaluateLoss, evaluateErr  = evaluateFunc(DeepFCNet, validate_loader, criterion)
-        
         trainLossArr.append(trainLoss)
         trainErrArr.append(trainErr)
         evaluateLossArr.append(evaluateLoss)

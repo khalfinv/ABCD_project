@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.utils.data as data
 import os, sys, pickle
 import math
+import time
 
 
 # define a model:
@@ -10,38 +11,47 @@ class DeepFCNet(nn.Module):
     def __init__(self):
         super(DeepFCNet, self).__init__()
         self.feature_extractor = FeatureExtractor()
+        self.feature_extractor = to_cuda(self.feature_extractor)
         self.similarity_measure = SimilarityMeasureNetwork()
+        self.similarity_measure = to_cuda(self.similarity_measure)
         self.classification_net = ClassificationNet(9045,3)
+        self.classification_net = to_cuda(self.classification_net)
 		
 		
     def forward(self, x):
         print ("x:", x.size())
         subjects = torch.zeros(0)
         for subject in x:
+            start = time.time()
             out = torch.zeros(0)
-            subject = subject.view(135,375)
-            #print("subject:", subject.size())
-            for net in subject:
-                net = net.unsqueeze(0)
-                net = net.unsqueeze(0)
-                #print("net", net.size())
-                new_net = self.feature_extractor(net)
-                new_net = torch.unsqueeze(new_net,dim=0)				
-                out = torch.cat([out,new_net.cpu()],dim=0)
-            #print ("out:", out.size())
-            out = out.squeeze(1)
-            #print ("out:", out.size())
-            fc_all = torch.zeros(0)
+            subject = subject.view(135,1,375)
+            out = self.feature_extractor(subject)
+            #print("out", out.size())
+            all_combinations = torch.zeros(0)
             for net1_index in range(out.size(0)):
                 for net2_index in range(net1_index+1,out.size(0)):
-                    two_nets=torch.cat([out[net1_index],out[net2_index]],dim=0)
-                    fc_out=self.similarity_measure(to_cuda(two_nets))
-                    fc_all = torch.cat([fc_all,fc_out.cpu()],dim=0)
+                    two_nets=torch.cat([out[net1_index].cpu(),out[net2_index].cpu()],dim=0) 
+                    two_nets = two_nets.unsqueeze(0)
+                    all_combinations = torch.cat([all_combinations,two_nets],dim=0)
+            #print("all_combinations:", all_combinations.size())
+            fc_all=self.similarity_measure(to_cuda(all_combinations))
+            #fc_all = torch.cat([fc_all,fc_out.cpu()],dim=0)
             #print("fc_all:", fc_all.size())
             fc_all = torch.unsqueeze(fc_all,dim=0)			
-            subjects = torch.cat([subjects,fc_all],dim=0)
-            print("subjects",subjects.size())
-        return self.classification_net(to_cuda(subjects))
+            subjects = torch.cat([subjects,fc_all.cpu()],dim=0)
+            #print("subjects:",subjects.size())
+            #print("subjects",subjects.size())
+            end = time.time()
+            timeInSeconds = (end - start)
+            #print ("subject Total time : " ,timeInSeconds)
+        start = time.time()
+        subjects = subjects.squeeze(2)
+        #print("subjects:",subjects.size())
+        out = self.classification_net(to_cuda(subjects))
+        end = time.time()
+        timeInSeconds = (end - start)
+       # print ("classification_net Total time : " ,timeInSeconds)
+        return out
 		
 class FeatureExtractor(nn.Module):
 	def __init__(self):
