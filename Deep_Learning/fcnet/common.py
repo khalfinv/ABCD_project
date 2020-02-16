@@ -9,9 +9,9 @@ import math
 class DeepFCNet(nn.Module):
     def __init__(self):
         super(DeepFCNet, self).__init__()
-        self.feature_extractor = FeatureExtractor(375,32)
+        self.feature_extractor = FeatureExtractor()
         self.similarity_measure = SimilarityMeasureNetwork()
-        self.classification_net = ClassificationNet(34716,3)
+        self.classification_net = ClassificationNet(9045,3)
 		
 		
     def forward(self, x):
@@ -19,52 +19,64 @@ class DeepFCNet(nn.Module):
         subjects = torch.zeros(0)
         for subject in x:
             out = torch.zeros(0)
-            subject = subject.view(264,375)
+            subject = subject.view(135,375)
+            #print("subject:", subject.size())
             for net in subject:
+                net = net.unsqueeze(0)
+                net = net.unsqueeze(0)
+                #print("net", net.size())
                 new_net = self.feature_extractor(net)
                 new_net = torch.unsqueeze(new_net,dim=0)				
                 out = torch.cat([out,new_net.cpu()],dim=0)
-            print ("out:", out.size())
+            #print ("out:", out.size())
+            out = out.squeeze(1)
+            #print ("out:", out.size())
             fc_all = torch.zeros(0)
             for net1_index in range(out.size(0)):
                 for net2_index in range(net1_index+1,out.size(0)):
                     two_nets=torch.cat([out[net1_index],out[net2_index]],dim=0)
                     fc_out=self.similarity_measure(to_cuda(two_nets))
                     fc_all = torch.cat([fc_all,fc_out.cpu()],dim=0)
-            print("fc_all:", fc_all.size())
+            #print("fc_all:", fc_all.size())
             fc_all = torch.unsqueeze(fc_all,dim=0)			
             subjects = torch.cat([subjects,fc_all],dim=0)
             print("subjects",subjects.size())
         return self.classification_net(to_cuda(subjects))
 		
 class FeatureExtractor(nn.Module):
-	def __init__(self, input_size, num_classes):
+	def __init__(self):
 		super(FeatureExtractor, self).__init__()
-		self.fc1 = nn.Linear(input_size, 64)
-		self.relu = nn.ReLU()
-		self.sig = nn.Sigmoid()
-		self.tanh = nn.Tanh()
-		self.rrelu = nn.RReLU()
-		self.fc2 = nn.Linear(64, 64)
-		self.fc3 = nn.Linear(64, num_classes)
-		self.dropout = nn.Dropout(p=0.2)
-		self.bn1 = nn.BatchNorm1d(784)
-		self.bn2 = nn.BatchNorm1d(64)
-		self.bn3 = nn.BatchNorm1d(32)
-
+		self.layer1 = nn.Sequential(
+			nn.Conv1d(1, 32, 3),
+            nn.BatchNorm1d(32),
+			nn.LeakyReLU(),
+			nn.MaxPool2d(2))
+		self.layer2 = nn.Sequential(
+			nn.Conv1d(16, 64, 3),
+            nn.BatchNorm1d(64),
+			nn.LeakyReLU(),
+			nn.MaxPool2d(2))
+		self.layer3 = nn.Sequential(
+			nn.Conv1d(32, 96, 3),
+            nn.BatchNorm1d(96),
+			nn.LeakyReLU(),
+			nn.MaxPool2d(2))
+		self.fc = nn.Sequential(
+            nn.Linear(48*45, 32))
 	def forward(self, x):
-		out = self.fc1(x)
-		out = self.rrelu(out)
-		out = self.dropout(out)
-		out = self.fc2(out)
-		out = self.relu(out)
-		out = self.fc3(out)
+		out = self.layer1(x)
+		out = self.layer2(out)
+		out = self.layer3(out)
+		#print("out size: ", out.size())
+		out = out.view(out.size(0), -1)
+		out = self.fc(out)
 		return out
+
 class ClassificationNet(nn.Module):
 	def __init__(self, input_size, num_classes):
 		super(ClassificationNet, self).__init__()
-		self.fc1 = nn.Linear(input_size, 4096)
-		self.fc2 = nn.Linear(4096, 256)
+		self.fc1 = nn.Linear(input_size, 1024)
+		self.fc2 = nn.Linear(1024, 256)
 		self.fc3 = nn.Linear(256, 64)
 		self.fc4 = nn.Linear(64, num_classes)
 		self.relu = nn.ReLU()
@@ -120,17 +132,15 @@ class TimeseriesDataset(data.Dataset):
 		self.scores = []
 		
 		pkl_file = open(dataset_path, 'rb')
-		self.time_series, self.scores = pickle.load(pkl_file)
+		self.subjects = pickle.load(pkl_file)
 		pkl_file.close()
-		
-		self.time_series = [torch.from_numpy(ts) for ts in self.time_series]
 				
 	def __len__(self):
-		return len(self.time_series)
+		return len(self.subjects)
 
 	def __getitem__(self, idx):
-		time_series, scores = self.time_series[idx], self.scores[idx]
-		return time_series, scores
+		time_series, score = self.subjects[idx]
+		return torch.from_numpy(time_series), score
 	
 #This function enable the model to run in cpu and gpu	
 def to_cuda(x):
