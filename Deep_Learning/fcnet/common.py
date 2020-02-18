@@ -4,6 +4,7 @@ import torch.utils.data as data
 import os, sys, pickle
 import math
 import time
+import numpy as np
 
 
 # define a model:
@@ -138,12 +139,20 @@ class SimilarityMeasureNetwork(nn.Module):
 		
 class TimeseriesDataset(data.Dataset):
 	def __init__(self, dataset_path):
-		self.time_series = []
-		self.scores = []
-		
+		self.subjects = []
 		pkl_file = open(dataset_path, 'rb')
 		self.subjects = pickle.load(pkl_file)
 		pkl_file.close()
+		
+		# for subject in dataset:
+			# time_series = subject[0]
+			# allCombinations = []
+			# num_of_net = time_series.shape[0]
+			# for net1_index in range(num_of_net):
+				# for net2_index in range(net1_index+1,num_of_net):
+					# allCombinations.append(np.asarray([time_series[net1_index]] + [time_series[net2_index]], dtype=np.float32))
+			# subject = (np.asarray(allCombinations,dtype=np.float32),subject[1])
+			# self.subjects.append(subject)
 				
 	def __len__(self):
 		return len(self.subjects)
