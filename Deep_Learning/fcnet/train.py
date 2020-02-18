@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import time
 
 # Hyper Parameters
-num_epochs = 50
+num_epochs = 30
 batch_size = 50
 learning_rate = 0.001
 
@@ -38,31 +38,24 @@ def trainFunc(net, train_loader, criterion, optimizer):
     total = 0 # sum of total scores 
     net.train() # turning the network to training mode, affect dropout and batch-norm layers if exists
     for i, (time_series, scores) in enumerate(train_loader):
-        time_series = time_series.unsqueeze(1)
+        start = time.time()
         time_series = common.to_cuda(time_series)
         scores = common.to_cuda(scores)
-        end = time.time()
-
         # Forward + Backward + Optimize
         optimizer.zero_grad()
-        start = time.time()
         outputs = net(time_series)
-        end = time.time()
-        timeInSeconds = (end - start)
-        print ("forward Total time : " ,timeInSeconds)	
         #print("outputs:", outputs)
         loss = criterion(outputs, scores)
-        start = time.time()
         loss.backward()
-        end = time.time()
-        timeInSeconds = (end - start)
-        print ("backwards Total time : " ,timeInSeconds)	
         optimizer.step()
         lossSum += loss.item()
         total += scores.size(0)
         _, predicted = torch.max(outputs, 1)
         #print("predicted:",predicted)
         errSum += (predicted.cpu() != scores.cpu()).sum()
+        end = time.time()
+        timeInSeconds = (end - start)
+        print (" one batch Total time : " ,timeInSeconds)	
 		
         if (i+1) % 30 == 0:
             print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f'
@@ -75,7 +68,7 @@ def evaluateFunc(net, validate_loader, criterion):
     total = 0 # sum of total scores 
     net.eval() # turning the network to evaluation mode, affect dropout and batch-norm layers if exists
     for i, (time_series, scores) in enumerate(validate_loader):
-        time_series = time_series.unsqueeze(1)
+        #time_series = time_series.unsqueeze(1)
         time_series = common.to_cuda(time_series)
         outputs = net(time_series)
         loss = criterion(outputs.cpu(), scores)
@@ -100,8 +93,9 @@ if __name__ == "__main__":
     validate_dataset = common.TimeseriesDataset(os.path.join(args.data_folder,"validate_set_class.pkl"))
 
 
-    time_series, _, = train_dataset[10]
-
+    # time_series, _, = train_dataset[10]
+    # print("time_series", time_series.shape)
+    # exit(1)
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=batch_size,
                                                shuffle=True)
@@ -125,7 +119,11 @@ if __name__ == "__main__":
     evaluateErrArr = []
     #Iterate num_epoch times and in each epoch train on total data amount / batch_size
     for epoch in range(num_epochs):
+        start = time.time()
         trainLoss, trainErr = trainFunc(DeepFCNet, train_loader, criterion, optimizer)
+        end = time.time()
+        timeInSeconds = (end - start)
+        print ("epoch train Total time : " ,timeInSeconds)	
         evaluateLoss, evaluateErr  = evaluateFunc(DeepFCNet, validate_loader, criterion)
         trainLossArr.append(trainLoss)
         trainErrArr.append(trainErr)

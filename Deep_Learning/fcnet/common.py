@@ -5,6 +5,7 @@ import os, sys, pickle
 import math
 import time
 import numpy as np
+import copy
 
 
 # define a model:
@@ -20,37 +21,16 @@ class DeepFCNet(nn.Module):
 		
 		
     def forward(self, x):
-        print ("x:", x.size())
-        subjects = torch.zeros(0)
-        for subject in x:         
-            out = torch.zeros(0)
-            subject = subject.view(135,1,375)
-            out = self.feature_extractor(subject)
-            #print("out", out.size())
-            all_combinations = torch.zeros(0)
-            for net1_index in range(out.size(0)):
-                for net2_index in range(net1_index+1,out.size(0)):
-                    two_nets=torch.cat([out[net1_index].cpu(),out[net2_index].cpu()],dim=0) 
-                    two_nets = two_nets.unsqueeze(0)
-                    all_combinations = torch.cat([all_combinations,two_nets],dim=0)
-            #print("all_combinations:", all_combinations.size())
-            start = time.time()
-            fc_all=self.similarity_measure(to_cuda(all_combinations))
-            end = time.time()
-            timeInSeconds = (end - start)
-            print ("similarity_measure Total time : " ,timeInSeconds)
-            #fc_all = torch.cat([fc_all,fc_out.cpu()],dim=0)
-            #print("fc_all:", fc_all.size())
-            fc_all = torch.unsqueeze(fc_all,dim=0)			
-            subjects = torch.cat([subjects,fc_all.cpu()],dim=0)
-        start = time.time()
-        subjects = subjects.squeeze(2)
-        #print("subjects:",subjects.size())
-        out = self.classification_net(to_cuda(subjects))
-        end = time.time()
-        timeInSeconds = (end - start)
-       # print ("classification_net Total time : " ,timeInSeconds)
-        return out
+        #print ("x:", x.shape)
+        subjects = to_cuda(torch.zeros([x.shape[0],9045], dtype=torch.float32, requires_grad=True))
+        subject_idx = 0
+        for subject in x:                     
+            fc_all=self.similarity_measure(subject)
+            subjects[subject_idx] = fc_all.squeeze(1)
+            subject_idx+=1
+        #print("subjects:",subjects.cpu())
+        out_class = self.classification_net(subjects)
+        return out_class
 		
 class FeatureExtractor(nn.Module):
 	def __init__(self):
@@ -113,7 +93,7 @@ class SimilarityMeasureNetwork(nn.Module):
 	def __init__(self):
 		super(SimilarityMeasureNetwork, self).__init__()
 		self.fc1 = nn.Sequential(
-			nn.Linear(64, 32),
+			nn.Linear(750, 32),
 			nn.ReLU())
 		self.fc2 = nn.Sequential(
 			nn.Linear(32, 16),
@@ -136,34 +116,43 @@ class SimilarityMeasureNetwork(nn.Module):
 
 		
 class TimeseriesDataset(data.Dataset):
-	def __init__(self, dataset_path):
-		self.subjects = []
-		pkl_file = open(dataset_path, 'rb')
-		dataset = pickle.load(pkl_file)
-		pkl_file.close()
-		
-		for subject in dataset:
-			time_series = subject[0]
-			allCombinations = []
-			num_of_net = time_series.shape[0]
-			for net1_index in range(num_of_net):
-				for net2_index in range(net1_index+1,num_of_net):
-					two_nets = np.concatenate((time_series[net1_index],time_series[net2_index]))
-					allCombinations.append(two_nets)
-			subject = (np.asarray(allCombinations,dtype=np.float32),subject[1])
-			self.subjects.append(subject)
+    def __init__(self, dataset_path):
+        self.subjects = []
+        pkl_file = open(dataset_path, 'rb')
+        self.subjects = pickle.load(pkl_file)
+        pkl_file.close()
+        # i = 0
+        # for subject in dataset:
+            # time_series = subject[0]
+            # allCombinations = []
+            # num_of_net = time_series.shape[0]
+            # for net1_index in range(num_of_net):
+                # for net2_index in range(net1_index+1,num_of_net):
+                    # two_nets = np.concatenate((time_series[net1_index],time_series[net2_index]))
+                    # allCombinations.append(two_nets)
+            # subject = (np.asarray(allCombinations,dtype=np.float32),subject[1])
+            # self.subjects.append(subject)
+            # print(i)
+            # i+=1
 				
-	def __len__(self):
-		return len(self.subjects)
+    def __len__(self):
+        return len(self.subjects)
 
-	def __getitem__(self, idx):
-		time_series, score = self.subjects[idx]
-		return torch.from_numpy(time_series), score
+    def __getitem__(self, idx):
+        time_series, score = self.subjects[idx]
+        allCombinations = []
+        num_of_net = time_series.shape[0]
+        for net1_index in range(num_of_net):
+            for net2_index in range(net1_index+1,num_of_net):
+                two_nets = np.concatenate((time_series[net1_index],time_series[net2_index]))
+                allCombinations.append(two_nets)
+        new_time_series = np.asarray(allCombinations,dtype=np.float32)
+        return torch.from_numpy(new_time_series), score
 	
 #This function enable the model to run in cpu and gpu	
 def to_cuda(x):
     use_gpu = torch.cuda.is_available()	
-    device = torch.device("cuda:1")
+    device = torch.device("cuda:0")
     if use_gpu:
         x = x.to(device)
     return x
