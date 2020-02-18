@@ -22,8 +22,7 @@ class DeepFCNet(nn.Module):
     def forward(self, x):
         print ("x:", x.size())
         subjects = torch.zeros(0)
-        for subject in x:
-            start = time.time()
+        for subject in x:         
             out = torch.zeros(0)
             subject = subject.view(135,1,375)
             out = self.feature_extractor(subject)
@@ -35,16 +34,15 @@ class DeepFCNet(nn.Module):
                     two_nets = two_nets.unsqueeze(0)
                     all_combinations = torch.cat([all_combinations,two_nets],dim=0)
             #print("all_combinations:", all_combinations.size())
+            start = time.time()
             fc_all=self.similarity_measure(to_cuda(all_combinations))
+            end = time.time()
+            timeInSeconds = (end - start)
+            print ("similarity_measure Total time : " ,timeInSeconds)
             #fc_all = torch.cat([fc_all,fc_out.cpu()],dim=0)
             #print("fc_all:", fc_all.size())
             fc_all = torch.unsqueeze(fc_all,dim=0)			
             subjects = torch.cat([subjects,fc_all.cpu()],dim=0)
-            #print("subjects:",subjects.size())
-            #print("subjects",subjects.size())
-            end = time.time()
-            timeInSeconds = (end - start)
-            #print ("subject Total time : " ,timeInSeconds)
         start = time.time()
         subjects = subjects.squeeze(2)
         #print("subjects:",subjects.size())
@@ -141,18 +139,19 @@ class TimeseriesDataset(data.Dataset):
 	def __init__(self, dataset_path):
 		self.subjects = []
 		pkl_file = open(dataset_path, 'rb')
-		self.subjects = pickle.load(pkl_file)
+		dataset = pickle.load(pkl_file)
 		pkl_file.close()
 		
-		# for subject in dataset:
-			# time_series = subject[0]
-			# allCombinations = []
-			# num_of_net = time_series.shape[0]
-			# for net1_index in range(num_of_net):
-				# for net2_index in range(net1_index+1,num_of_net):
-					# allCombinations.append(np.asarray([time_series[net1_index]] + [time_series[net2_index]], dtype=np.float32))
-			# subject = (np.asarray(allCombinations,dtype=np.float32),subject[1])
-			# self.subjects.append(subject)
+		for subject in dataset:
+			time_series = subject[0]
+			allCombinations = []
+			num_of_net = time_series.shape[0]
+			for net1_index in range(num_of_net):
+				for net2_index in range(net1_index+1,num_of_net):
+					two_nets = np.concatenate((time_series[net1_index],time_series[net2_index]))
+					allCombinations.append(two_nets)
+			subject = (np.asarray(allCombinations,dtype=np.float32),subject[1])
+			self.subjects.append(subject)
 				
 	def __len__(self):
 		return len(self.subjects)
