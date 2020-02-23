@@ -36,7 +36,7 @@ class fMRI_CNN(nn.Module):
             nn.LeakyReLU(),
             nn.BatchNorm2d(256))
         self.fc1 = nn.Sequential(
-            nn.Linear(27*41*256, 1000),
+            nn.Linear(11*41*256, 1000),
             nn.LeakyReLU(),
             nn.Dropout(p=0.3))
         self.fc2 = nn.Sequential(

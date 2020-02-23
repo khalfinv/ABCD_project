@@ -9,8 +9,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # Hyper Parameters
-num_epochs = 80
-batch_size = 20
+num_epochs = 60
+batch_size = 50
 learning_rate = 0.001
 
 	
