@@ -12,7 +12,7 @@ import copy
 class DeepFCNet(nn.Module):
     def __init__(self):
         super(DeepFCNet, self).__init__()
-        self.similarity_measure = SimilarityMeasureNetwork()
+        self.similarity_measure = SimilarityMeasureNetwork(750,1)
         self.similarity_measure = to_cuda(self.similarity_measure)
         self.classification_net = ClassificationNet(9045,3)
         self.classification_net = to_cuda(self.classification_net)
@@ -32,40 +32,39 @@ class DeepFCNet(nn.Module):
 		
 
 class ClassificationNet(nn.Module):
-    def __init__(self, input_size, num_classes):
-        super(ClassificationNet, self).__init__()
-        self.fc1 = nn.Linear(input_size, 1024)
-        self.fc2 = nn.Linear(1024, 256)
-        self.fc3 = nn.Linear(256, 64)
-        self.fc4 = nn.Linear(64, num_classes)
-        self.relu = nn.ReLU()
-        self.sig = nn.Sigmoid()
-        self.tanh = nn.Tanh()
-        self.rrelu = nn.RReLU()
-        self.dropout = nn.Dropout(p=0.3)
-        self.logsoftmax = nn.LogSoftmax(dim=1)
+	def __init__(self, input_size, num_classes):
+		super(ClassificationNet, self).__init__()
+		self.logsoftmax = nn.LogSoftmax(dim=1)	
+		self.fc1 = nn.Sequential(
+			nn.Linear(input_size, 1024),
+			nn.Dropout(p=0.3),
+			nn.ReLU())
+		self.fc2 = nn.Sequential(
+			nn.Linear(1024, 256),
+			nn.Dropout(p=0.3),
+			nn.ReLU())
+		self.fc3 = nn.Sequential(
+			nn.Linear(256, 64),
+			nn.Dropout(p=0.3),
+			nn.ReLU())
+		self.fc4 = nn.Sequential(
+			nn.Linear(64, num_classes))
 
 
-    def forward(self, x):
-        out = self.fc1(x)
-        out = self.relu(out)
-        out = self.dropout(out)
-        out = self.fc2(out)
-        out = self.relu(out)
-        out = self.dropout(out)
-        out = self.fc3(out)
-        out = self.relu(out)
-        out = self.dropout(out)
-        out = self.fc4(out)
-        return self.logsoftmax(out)
+	def forward(self, x):
+		out = self.fc1(x)
+		out = self.fc2(out)
+		out = self.fc3(out)
+		out = self.fc4(out)
+		return self.logsoftmax(out)
 		
 
 		
 class SimilarityMeasureNetwork(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size, num_classes):
         super(SimilarityMeasureNetwork, self).__init__()
         self.fc1 = nn.Sequential(
-            nn.Linear(750, 32),
+            nn.Linear(input_size, 32),
             nn.Dropout(p=0.3),
             nn.ReLU())
         self.fc2 = nn.Sequential(
@@ -77,15 +76,21 @@ class SimilarityMeasureNetwork(nn.Module):
             nn.Dropout(p=0.3),
             nn.ReLU())
         self.fc4 = nn.Sequential(
-            nn.Linear(8, 1),
+            nn.Linear(8, num_classes),
             nn.Tanh())
 			
     def forward(self, x):
         out = self.fc1(x)
         out = self.fc2(out)
         out = self.fc3(out)
+        # count = 0
+        # for i in out:
+            # for j in i:
+                # if j == 0:
+                    # count+=1
+        # print ("num of zeros:", count)
         out = self.fc4(out)
-        #print("SimilarityMeasureNetwork out", out)
+        print("SimilarityMeasureNetwork out", out)
         return out
 		
 
