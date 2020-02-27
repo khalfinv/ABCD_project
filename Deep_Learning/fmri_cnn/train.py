@@ -40,19 +40,16 @@ def trainFunc(net, train_loader, criterion, optimizer):
 		time_series = time_series.unsqueeze(1)
 		time_series = common.to_cuda(time_series)
 		scores = common.to_cuda(scores)
-		#print("scores:",scores)
 		
 		# Forward + Backward + Optimize
 		optimizer.zero_grad()
 		outputs = net(time_series)
-		#print("outputs:", outputs)
 		loss = criterion(outputs, scores)
 		loss.backward()
 		optimizer.step()
 		lossSum += loss.item()
 		total += scores.size(0)
 		_, predicted = torch.max(outputs, 1)
-		#print("predicted:",predicted)
 		errSum += (predicted.cpu() != scores.cpu()).sum()
 		
 		if (i+1) % 20 == 0:
@@ -104,8 +101,6 @@ if __name__ == "__main__":
 											   
     #create object of the fMRI_CNN class
     fMRI_CNN = common.fMRI_CNN()
-    # if torch.cuda.device_count() > 1:
-        # fMRI_CNN = nn.DataParallel(fMRI_CNN)
     fMRI_CNN = common.to_cuda(fMRI_CNN)
     # Loss and Optimizer
     criterion = nn.NLLLoss()

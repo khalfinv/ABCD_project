@@ -1,10 +1,20 @@
+#!/usr/bin/python3
+"""
+==========================================================================================
+Common functions and classes for training and testing scripts. Includes:
+- fMRI_CNN network class
+- fMRI time series dataset class
+- to_cuda function
+==========================================================================================
+
+"""
+
 import torch
 import torch.nn as nn
 import torch.utils.data as data
 import os, sys, pickle
 
 
-# define a model:
 class fMRI_CNN(nn.Module):
     def __init__(self):
         super(fMRI_CNN, self).__init__()
@@ -74,8 +84,12 @@ class TimeseriesDataset(data.Dataset):
 		time_series, score = self.subjects[idx]
 		return torch.from_numpy(time_series), score
 		
-#This function enable the model to run in cpu and gpu	
+	
 def to_cuda(x):
+	"""This function enable the model to run in cpu and gpu.
+	param x: The object that need to be copy to gpu if exists.
+	return:  The input,x, after copied to gpu if gpu available.
+    """
     use_gpu = torch.cuda.is_available()	
     device = torch.device("cuda:0")
     if use_gpu:
