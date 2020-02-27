@@ -70,84 +70,80 @@ def getScore(subject_id, score_file, score_key, is_class):
 			score = avg
 	return score
 def createAugDataset(subjects_dict, min_scan_len, score_file, score_key, is_class):
-	"""Create augmented datasets. Each data with num of volumes >= min_scan_len, is augmented 5 times. 
+    """Create augmented datasets. Each data with num of volumes >= min_scan_len, is augmented 5 times. 
         The times series are cut to min_scan_len, when the start point of the cutting is randomized 5 times.
     param subjects_dict: dictionary. The ABCD subjects' dictionary after post processing.
     param min_scan_len: integer. Number of volumes for inclusion. 
     param score_file: Dataframe. The scores excel file
     param score_key: String. The score's column name
     param is_class: Bool. If true = split to classes, else return the actual score value
-	return: List of Tuples. Tuple = (time_series, score). All data aftrer augmentation. 
+    return: List of Tuples. Tuple = (time_series, score). All data aftrer augmentation. 
     """
-	random.seed()
-	time_series = []
-	scores = []
-	for key, val in subjects_data_dict.items():
-		score = getScore(key, score_file, score_key, is_class) 
-		rand_times = 5
-		# print("subject:", key)
-		# print("num_of_volumes:", val["num_of_volumes"])
-		if(val["num_of_volumes"] >= min_scan_len):
-			while (rand_times > 0):
-				start = random.randrange(val["num_of_volumes"] - min_scan_len + 1)
-				# print("rand:", start)
-				time_series.append((val["time_series"][start:(start+min_scan_len)]).T)
-				scores.append(score)
-				# print("new data inserted")
-				rand_times-=1
-	return list(zip(time_series, scores))
-	
+    random.seed()
+    time_series = []
+    scores = []
+    num_of_subjects=0
+    for key, val in subjects_data_dict.items():
+        score = getScore(key, score_file, score_key, is_class) 
+        if(val["num_of_volumes"] >= min_scan_len):
+            while (rand_times > 0):
+                start = random.randrange(val["num_of_volumes"] - min_scan_len + 1)
+                time_series.append((val["time_series"][start:(start+min_scan_len)]).T)
+                scores.append(score)
+                rand_times-=1
+    return list(zip(time_series, scores))
+
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--min_scan_len', required=False, type=int, default=375, help='Number of volumes for subjects exclusion. Default is 375 (5 minutes scan)')
-	parser.add_argument('--subjects_data_dict', required=True, type=str, help='path to pkl file containing the subjects data dictionary')
-	parser.add_argument('--score_file', required=True, type=str, help='path to excel file containing the scores')
-	parser.add_argument('--score_key', required=True, type=str, help='name of the test score column')
-	parser.add_argument('--classification', help='creates 3 classes instage of regression values',action='store_true')
-	parser.add_argument('--out_folder', required=False, type=str, default=".", help='path to output folder. Default is current folder')
-	args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--min_scan_len', required=False, type=int, default=375, help='Number of volumes for subjects exclusion. Default is 375 (5 minutes scan)')
+    parser.add_argument('--subjects_data_dict', required=True, type=str, help='path to pkl file containing the subjects data dictionary')
+    parser.add_argument('--score_file', required=True, type=str, help='path to excel file containing the scores')
+    parser.add_argument('--score_key', required=True, type=str, help='name of the test score column')
+    parser.add_argument('--classification', help='creates 3 classes instage of regression values',action='store_true')
+    parser.add_argument('--out_folder', required=False, type=str, default=".", help='path to output folder. Default is current folder')
+    args = parser.parse_args()
 
-	#open and read the pkl file of all subjects' data	
-	pkl_file = open(args.subjects_data_dict, 'rb')
-	subjects_data_dict = pickle.load(pkl_file)
-	pkl_file.close()
-	
-	#Read the excel file 
-	df = pd.read_excel(io=args.score_file)
-	#check if columns exists in the excel files
-	if('SUBJECTKEY' not in df):
-		print("'SUBJECTKEY' column does not exists in excel file")
-		sys.exit()
+    #open and read the pkl file of all subjects' data	
+    pkl_file = open(args.subjects_data_dict, 'rb')
+    subjects_data_dict = pickle.load(pkl_file)
+    pkl_file.close()
 
-	if(args.score_key not in df):
-		print(args.score_key, " column does not exist in excel file")
-		sys.exit()
+    #Read the excel file 
+    df = pd.read_excel(io=args.score_file)
+    #check if columns exists in the excel files
+    if('SUBJECTKEY' not in df):
+        print("'SUBJECTKEY' column does not exists in excel file")
+        sys.exit()
 
-	#change the SUBJECT_KEY values to match to SUBJECT_KEY format in the subjects_data_dict (without "_")
-	for i, row in df.iterrows(): 
-		df.at[i,'SUBJECTKEY'] = re.sub(r"[^a-zA-Z0-9]","",df.at[i,'SUBJECTKEY'])
+    if(args.score_key not in df):
+        print(args.score_key, " column does not exist in excel file")
+        sys.exit()
 
-	subjects = createAugDataset(args.subjects_data_dict,args.min_scan_len, df, args.score_key, args.classification)
-	#split the subjects to 3 datasets
-	train_set, validate_set, test_set = splitToDatasets(subjects)
-    
-	if args.classification == True:
-		suffix = "class"		
-	else:
-		suffix = "reg"
-	
-	#Save the datasets	
-	train_file = open(args.out_folder + "/train_set_" + suffix + ".pkl", mode="wb")
-	pickle.dump(train_set, train_file)
-	train_file.close() 
+    #change the SUBJECT_KEY values to match to SUBJECT_KEY format in the subjects_data_dict (without "_")
+    for i, row in df.iterrows(): 
+        df.at[i,'SUBJECTKEY'] = re.sub(r"[^a-zA-Z0-9]","",df.at[i,'SUBJECTKEY'])
 
-	validate_file = open(args.out_folder + "/validate_set_" + suffix + ".pkl", mode="wb")
-	pickle.dump(validate_set, validate_file)
-	validate_file.close() 
+    subjects = createAugDataset(args.subjects_data_dict,args.min_scan_len, df, args.score_key, args.classification)
+    #split the subjects to 3 datasets
+    train_set, validate_set, test_set = splitToDatasets(subjects)
+    exit(1)
+    if args.classification == True:
+        suffix = "class"		
+    else:
+        suffix = "reg"
 
-	test_file = open(args.out_folder + "/test_set_" + suffix + ".pkl", mode="wb")
-	pickle.dump(test_set, test_file)
-	test_file.close() 
+    #Save the datasets	
+    train_file = open(args.out_folder + "/train_set_" + suffix + ".pkl", mode="wb")
+    pickle.dump(train_set, train_file)
+    train_file.close() 
+
+    validate_file = open(args.out_folder + "/validate_set_" + suffix + ".pkl", mode="wb")
+    pickle.dump(validate_set, validate_file)
+    validate_file.close() 
+
+    test_file = open(args.out_folder + "/test_set_" + suffix + ".pkl", mode="wb")
+    pickle.dump(test_set, test_file)
+    test_file.close() 
 	
 	
 	

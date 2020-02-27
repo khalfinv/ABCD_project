@@ -19,44 +19,42 @@ class DeepFCNet(nn.Module):
 		
 		
     def forward(self, x):
-        #print ("x:", x.shape)
         subjects = to_cuda(torch.zeros([x.shape[0],9045], dtype=torch.float32, requires_grad=True))
         subject_idx = 0
         for subject in x:                     
             fc_all=self.similarity_measure(subject)
             subjects[subject_idx] = fc_all.squeeze(1)
             subject_idx+=1
-        #print("subjects:",subjects.cpu())
         out_class = self.classification_net(subjects)
         return out_class
 		
 
 class ClassificationNet(nn.Module):
-	def __init__(self, input_size, num_classes):
-		super(ClassificationNet, self).__init__()
-		self.logsoftmax = nn.LogSoftmax(dim=1)	
-		self.fc1 = nn.Sequential(
-			nn.Linear(input_size, 1024),
-			nn.Dropout(p=0.3),
-			nn.ReLU())
-		self.fc2 = nn.Sequential(
-			nn.Linear(1024, 256),
-			nn.Dropout(p=0.3),
-			nn.ReLU())
-		self.fc3 = nn.Sequential(
-			nn.Linear(256, 64),
-			nn.Dropout(p=0.3),
-			nn.ReLU())
-		self.fc4 = nn.Sequential(
-			nn.Linear(64, num_classes))
+    def __init__(self, input_size, num_classes):
+        super(ClassificationNet, self).__init__()
+        self.logsoftmax = nn.LogSoftmax(dim=1)	
+        self.fc1 = nn.Sequential(
+            nn.Linear(input_size, 1024),
+            nn.Dropout(p=0.3),
+            nn.LeakyReLU())
+        self.fc2 = nn.Sequential(
+            nn.Linear(1024, 256),
+            nn.Dropout(p=0.3),
+            nn.LeakyReLU())
+        self.fc3 = nn.Sequential(
+            nn.Linear(256, 64),
+            nn.Dropout(p=0.3),
+            nn.LeakyReLU())
+        self.fc4 = nn.Sequential(
+            nn.Linear(64, num_classes))
 
 
-	def forward(self, x):
-		out = self.fc1(x)
-		out = self.fc2(out)
-		out = self.fc3(out)
-		out = self.fc4(out)
-		return self.logsoftmax(out)
+    def forward(self, x):
+        out = self.fc1(x)
+        out = self.fc2(out)
+        out = self.fc3(out)
+        out = self.fc4(out)
+        return self.logsoftmax(out)
 		
 
 		
@@ -66,15 +64,15 @@ class SimilarityMeasureNetwork(nn.Module):
         self.fc1 = nn.Sequential(
             nn.Linear(input_size, 32),
             nn.Dropout(p=0.3),
-            nn.ReLU())
+            nn.LeakyReLU())
         self.fc2 = nn.Sequential(
             nn.Linear(32, 16),
             nn.Dropout(p=0.3),
-            nn.ReLU())
+            nn.LeakyReLU())
         self.fc3 = nn.Sequential(
             nn.Linear(16, 8),
             nn.Dropout(p=0.3),
-            nn.ReLU())
+            nn.LeakyReLU())
         self.fc4 = nn.Sequential(
             nn.Linear(8, num_classes),
             nn.Tanh())
@@ -83,14 +81,7 @@ class SimilarityMeasureNetwork(nn.Module):
         out = self.fc1(x)
         out = self.fc2(out)
         out = self.fc3(out)
-        # count = 0
-        # for i in out:
-            # for j in i:
-                # if j == 0:
-                    # count+=1
-        # print ("num of zeros:", count)
         out = self.fc4(out)
-        print("SimilarityMeasureNetwork out", out)
         return out
 		
 
@@ -119,7 +110,7 @@ class TimeseriesDataset(data.Dataset):
 #This function enable the model to run in cpu and gpu	
 def to_cuda(x):
     use_gpu = torch.cuda.is_available()
-    device = torch.device("cuda:0")
+    device = torch.device("cuda:1")
     if use_gpu:
         x = x.to(device)
     return x

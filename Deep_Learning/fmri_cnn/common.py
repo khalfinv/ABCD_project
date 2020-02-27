@@ -40,8 +40,7 @@ class fMRI_CNN(nn.Module):
             nn.LeakyReLU(),
             nn.Dropout(p=0.3))
         self.fc2 = nn.Sequential(
-            nn.Linear(1000, 3),
-            nn.LeakyReLU())
+            nn.Linear(1000, 3))
         self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
@@ -54,11 +53,9 @@ class fMRI_CNN(nn.Module):
         out = self.layer5(out)
         out = self.layer6(out)
         out = self.connect(out)
-        #print ("out", out.size())
         out = out.view(out.size(0), -1)
         out = self.fc1(out)
         out = self.fc2(out)
-        # out = self.fc3(out)
         return self.logsoftmax(out)
 		
 class TimeseriesDataset(data.Dataset):
