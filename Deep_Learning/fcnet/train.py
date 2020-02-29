@@ -59,19 +59,20 @@ def plotGraph(graphLabel, xValues, yValuesTrain, yValuesTest, xLabel, yLabel, ou
 
 	
 def trainFunc(net, train_loader, criterion, optimizer):
-	"""Train the network
-	param net: nn.Module. The network to train
-	param train_loader: data.Dataset. The train dataset
-	param criterion: Loss function
-	param optimizer: optimization algorhitm
-	
-	return: average over batches loss, average over batches error rate.
+    """Train the network
+    param net: nn.Module. The network to train
+    param train_loader: data.Dataset. The train dataset
+    param criterion: Loss function
+    param optimizer: optimization algorhitm
+
+    return: average over batches loss, average over batches error rate.
     """
     lossSum = 0 # sum of all loss 
     errSum = 0 # sum of all error rates 
     total = 0 # sum of total scores 
     net.train() # turning the network to training mode, affect dropout and batch-norm layers if exists
     for i, (time_series, scores) in enumerate(train_loader):
+        time_series = common.to_cuda(time_series)
         scores = common.to_cuda(scores)
         # Forward + Backward + Optimize
         optimizer.zero_grad()
@@ -83,19 +84,19 @@ def trainFunc(net, train_loader, criterion, optimizer):
         total += scores.size(0)
         _, predicted = torch.max(outputs, 1)
         errSum += (predicted.cpu() != scores.cpu()).sum()
-		
+        
         if (i+1) % 30 == 0:
             print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f'
                    %(epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, loss.item()))
     return ((lossSum / i), (100*float(errSum)/total)) 
 
 def evaluateFunc(net, validate_loader, criterion):
-	"""Evaluate the network
-	param net: nn.Module. The network to evaluate
-	param validate_loader: data.Dataset. The validate dataset
-	param criterion: Loss function
-	
-	return: average over batches loss, average over batches error rate.
+    """Evaluate the network
+    param net: nn.Module. The network to evaluate
+    param validate_loader: data.Dataset. The validate dataset
+    param criterion: Loss function
+
+    return: average over batches loss, average over batches error rate.
     """
     lossSum = 0 # sum of all loss 
     errSum = 0 # sum of all error rates 
@@ -109,7 +110,7 @@ def evaluateFunc(net, validate_loader, criterion):
         _, predicted = torch.max(outputs, 1)		
         total += scores.size(0)
         errSum += (predicted.cpu() != scores).sum()
-	#return the average loss and average error
+    #return the average loss and average error
     return ((lossSum / i), (100*float(errSum)/total)) 
 	
 
