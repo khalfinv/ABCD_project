@@ -1,3 +1,14 @@
+#!/usr/bin/python3
+"""
+==========================================================================================
+Common functions and classes for training and testing scripts. Includes:
+- fcnet network class
+- fMRI time series dataset class
+- to_cuda function
+==========================================================================================
+
+"""
+
 import torch
 import torch.nn as nn
 import torch.utils.data as data
@@ -18,10 +29,11 @@ class DeepFCNet(nn.Module):
         self.classification_net = to_cuda(self.classification_net)
 		
 		
-    def forward(self, x):
+    def forward(self, x):		 
         subjects = to_cuda(torch.zeros([x.shape[0],9045], dtype=torch.float32, requires_grad=True))
-        subject_idx = 0
-        for subject in x:                     
+        subject_idx = 0	
+        for subject in x:   
+			#Run similarity network for each cobination of 2 rois		
             fc_all=self.similarity_measure(subject)
             subjects[subject_idx] = fc_all.squeeze(1)
             subject_idx+=1
@@ -109,9 +121,13 @@ class TimeseriesDataset(data.Dataset):
 	
 #This function enable the model to run in cpu and gpu	
 def to_cuda(x):
-    use_gpu = torch.cuda.is_available()
-    device = torch.device("cuda:1")
-    if use_gpu:
-        x = x.to(device)
-    return x
+	"""This function enable the model to run in cpu and gpu.
+	param x: The object that need to be copy to gpu if exists.
+	return:  The input,x, after copied to gpu if gpu available.
+	"""
+	use_gpu = torch.cuda.is_available()
+	device = torch.device("cuda:1")
+	if use_gpu:
+		x = x.to(device)
+	return x
 	

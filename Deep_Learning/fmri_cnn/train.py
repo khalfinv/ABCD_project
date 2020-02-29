@@ -1,7 +1,15 @@
+#!/usr/bin/python3
+"""
+==========================================================================================
+Run training and evaluation. Plot error and loss graphs and save the trained model.
+==========================================================================================
+
+"""
+
+
 import torch
 import torch.nn as nn
 import os, sys, argparse
-import numpy as np
 import torch.utils.data as data
 import pandas as pd
 import common
@@ -15,12 +23,29 @@ learning_rate = 0.001
 
 	
 def save_checkpoint(model,filepath):
+	"""Save the model
+	param model: nn.Module. The torch model
+	param filepath: String. Full path for saving
+	
+	return: None.
+    """
 	state = {
 	'state_dict': model.state_dict(),
 	}
 	torch.save(state, filepath)
 	
 def plotGraph(graphLabel, xValues, yValuesTrain, yValuesTest, xLabel, yLabel, outputFile):
+	"""Create graph and save it.
+	param graphLabel: String. Graph's title
+	param xValues: List. List of x values
+	param yValuesTrain: List. List of y values for train dataset
+	param yValuesTest: List. List of y values for test dataset
+	param xLabel: String. Label for x values
+	param yLabel: String. Label for y values
+	param outputFile: String. Full path for the output file
+	
+	return: None.
+    """
 	fig, ax = plt.subplots(1, 1, figsize=(6, 5))
 	plt.title(graphLabel)
 	trainPlot, = plt.plot(xValues, yValuesTrain, label="Train")
@@ -32,6 +57,14 @@ def plotGraph(graphLabel, xValues, yValuesTrain, yValuesTest, xLabel, yLabel, ou
 
 	
 def trainFunc(net, train_loader, criterion, optimizer):
+	"""Train the network
+	param net: nn.Module. The network to train
+	param train_loader: data.Dataset. The train dataset
+	param criterion: Loss function
+	param optimizer: optimization algorhitm
+	
+	return: average over batches loss, average over batches error rate.
+    """
 	lossSum = 0 # sum of all loss 
 	errSum = 0 # sum of all error rates 
 	total = 0 # sum of total scores 
@@ -58,6 +91,13 @@ def trainFunc(net, train_loader, criterion, optimizer):
 	return ((lossSum / i), (100*float(errSum)/total)) 
 
 def evaluateFunc(net, validate_loader, criterion):
+	"""Evaluate the network
+	param net: nn.Module. The network to evaluate
+	param validate_loader: data.Dataset. The validate dataset
+	param criterion: Loss function
+
+	return: average over batches loss, average over batches error rate.
+	"""
 	lossSum = 0 # sum of all loss 
 	errSum = 0 # sum of all error rates 
 	total = 0 # sum of total scores 
@@ -87,8 +127,6 @@ if __name__ == "__main__":
         
     validate_dataset = common.TimeseriesDataset(os.path.join(args.data_folder,"validate_set_class.pkl"))
 
-
-    time_series, _, = train_dataset[10]
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                batch_size=batch_size,
