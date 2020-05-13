@@ -12,9 +12,9 @@ import argparse
 import common
 import os
 
-input_size = 14
+input_size = 52
 accuracy = 0
-num_classes = 4
+num_classes = 2
 		   
 def load_checkpoint(model,filepath):
 	"""Load the model
@@ -42,7 +42,7 @@ def testFunc(net, test_loader, out_folder):
 	num_of_below_avg = 0
 	num_of_avg = 0
 	num_of_above_avg = 0
-	nb_classes = 4
+	nb_classes = num_classes
 	conf_matrix = torch.zeros(nb_classes, nb_classes)
 	for i, (correlations, scores) in enumerate(test_loader):
 		correlations = common.to_cuda(correlations)
@@ -62,8 +62,6 @@ def testFunc(net, test_loader, out_folder):
 	for c in range(nb_classes):
 		idx = torch.ones(nb_classes).byte()
 		idx[c] = 0
-		# all non-class samples classified as non-class
-		TN = float(conf_matrix[idx.nonzero()[:, None], idx.nonzero()].sum()) #conf_matrix[idx[:, None], idx].sum() - conf_matrix[idx, c].sum()
 		# all non-class samples classified as class
 		FP = float(conf_matrix[idx, c].sum())
 		# all class samples not classified as class
@@ -71,7 +69,7 @@ def testFunc(net, test_loader, out_folder):
 	accuracy = (100*float(correct)/total)
 	out_file = open(os.path.join(out_folder,"results.txt"),'w')
 	out_file.write(str(conf_matrix.numpy()) + "\n")
-	out_file.write("False Positive: " + str(FP) + " " + "%.3f" % ((FP/total)*100) + "%" + " False Negative: " + str(FN) + " " + "%.3f" % ((FN/total)*100) + "%" + "\n")
+	out_file.write("False Positive, 0->1:" + str(FP) + " " + "%.3f" % ((FP/(conf_matrix[0,0]+conf_matrix[0,1]))*100) + "%" + " False Negative, 1->0:" + str(FN) + " " + "%.3f" % ((FN/(conf_matrix[1,0]+conf_matrix[1,1]))*100) + "%" + "\n")
 	out_file.write("accuracy: " + "%.3f" % accuracy + "\n")
 	out_file.close()
 	return accuracy

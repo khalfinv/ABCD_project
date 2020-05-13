@@ -17,11 +17,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # Hyper Parameters
-num_epochs = 60
+num_epochs = 150
 batch_size = 30
-learning_rate = 0.0001
-input_size = 14 # All combinations of Gordons networks
-num_classes = 4
+learning_rate = 0.00001
+input_size = 52
+num_classes = 2
 
 	
 def save_checkpoint(model,filepath):
