@@ -36,7 +36,7 @@ def createDataset(score_file, score_X, score_Y):
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--K', required=True, type=int, help='number of folds')
+	parser.add_argument('--K', required=False, type=int, default = 10, help='number of folds')
 	parser.add_argument('--dataset', required=True, type=str, help='path to pkl file containing all training data')
 	parser.add_argument('--out_folder', required=False, type=str, default=".", help='path to output folder. Default is current folder')
 	args = parser.parse_args()
@@ -46,13 +46,11 @@ if __name__ == "__main__":
 	subjects = pickle.load(pkl_file)
 	X = subjects["X"]
 	y = subjects["y"]	
-	print(type(X))
 	pkl_file.close()
 	
 	kf = KFold(n_splits=args.K) # Define the split
 	i = 1
 	for train_index, test_index in kf.split(X):
-		print("TRAIN:", train_index, "TEST:", test_index)
 		X_train = [X[i] for i in train_index]
 		y_train = [y[i] for i in train_index]
 		X_test = [X[i] for i in test_index]

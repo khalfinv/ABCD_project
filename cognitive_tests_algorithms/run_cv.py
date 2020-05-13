@@ -17,14 +17,30 @@ def collect_errors(exception):
 	"""
 	print(exception)
 	
+def collect_results(result):
+	"""Collect the results from postProcessing function. 
+	   Insert the result to allParticipantsDic.
+	param result: dictionary raw. 
+		key: subject's key . 
+		value: {"time_series" : matrix of time series after censoring (time_points, power_rois), "covariance" : covariance matrix of power rois (power_rois, power_rois),
+			"correlation" : correlation matrix of power rois (power_rois, power_rois), "num_of_volumes" : num of volumes left after censoring}
+	return: None 
+	"""
+	global total_acc
+	total_acc+=result
+	
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--cv_data_folder', required=True, help='path to folder contaning all cross validation folders')
 	args = parser.parse_args()
 	K = 10
 	total_acc = 0
+	pool = mp.Pool()
 	for i in range(K):
-		total_acc+=run_train_test(args.cv_data_folder, i)
+		[pool.apply_async(run_train_test, args=(args.cv_data_folder, i,),callback=collect_results, error_callback = collect_errors)]
+	pool.close() 
+	pool.join()
+
 		
 	print("Average accuracy:", total_acc/K)
 

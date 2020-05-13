@@ -12,8 +12,9 @@ import argparse
 import common
 import os
 
-input_size = 6
+input_size = 14
 accuracy = 0
+num_classes = 4
 		   
 def load_checkpoint(model,filepath):
 	"""Load the model
@@ -41,7 +42,7 @@ def testFunc(net, test_loader, out_folder):
 	num_of_below_avg = 0
 	num_of_avg = 0
 	num_of_above_avg = 0
-	nb_classes = 3
+	nb_classes = 4
 	conf_matrix = torch.zeros(nb_classes, nb_classes)
 	for i, (correlations, scores) in enumerate(test_loader):
 		correlations = common.to_cuda(correlations)
@@ -81,7 +82,7 @@ def main(test_dataset_path, model_path, out_folder ):
 	
 	test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 											   shuffle=False)
-	net = common.cogtests_nn(input_size, 3)
+	net = common.cogtests_nn(input_size, num_classes)
 	#load the model						  
 	net = load_checkpoint(net, model_path)
 	net = common.to_cuda(net)

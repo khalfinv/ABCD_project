@@ -20,7 +20,8 @@ import matplotlib.pyplot as plt
 num_epochs = 60
 batch_size = 30
 learning_rate = 0.0001
-input_size = 6 # All combinations of Gordons networks
+input_size = 14 # All combinations of Gordons networks
+num_classes = 4
 
 	
 def save_checkpoint(model,filepath):
@@ -139,7 +140,7 @@ if __name__ == "__main__":
 										   
 											   
     #create object of the cogtests_nn class
-    cogtests_nn = common.cogtests_nn(input_size, 3)
+    cogtests_nn = common.cogtests_nn(input_size, num_classes)
     cogtests_nn = common.to_cuda(cogtests_nn)
     # Loss and Optimizer
     #criterion = nn.CrossEntropyLoss(weight=torch.tensor([0.34, 0, 0.66]))
