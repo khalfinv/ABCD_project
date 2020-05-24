@@ -121,13 +121,15 @@ class TimeseriesDataset(data.Dataset):
 	
 #This function enable the model to run in cpu and gpu	
 def to_cuda(x):
-	"""This function enable the model to run in cpu and gpu.
-	param x: The object that need to be copy to gpu if exists.
-	return:  The input,x, after copied to gpu if gpu available.
-	"""
-	use_gpu = torch.cuda.is_available()
-	device = torch.device("cuda:1")
-	if use_gpu:
-		x = x.to(device)
-	return x
+    """This function enable the model to run in cpu and gpu.
+    param x: The object that need to be copy to gpu if exists.
+    return:  The input,x, after copied to gpu if gpu available.
+    """
+    use_gpu = torch.cuda.is_available()
+    if(use_gpu == False):
+        print("where is the gpu???")
+    device = torch.device("cuda:0")
+    if use_gpu:
+        x = x.to(device)
+    return x
 	

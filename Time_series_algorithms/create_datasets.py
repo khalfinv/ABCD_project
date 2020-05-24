@@ -46,29 +46,31 @@ def splitToDatasets(all_subjects):
 	return train_dataset, validate_dataset, test_dataset  
 	
 def getScore(subject_id, score_file, score_key, is_class):
-	"""Get the score's class or actual value.
+    """Get the score's class or actual value.
         classes : below average = 0, average = 1, above average = 2. Mean = 100, sd = 15.
-	param subject_id: String. The subject's key.
+    param subject_id: String. The subject's key.
     param score_file: Dataframe. The scores excel file
     param score_key: String. The score's column name
     param is_class: Bool. If true = split to classes, else return the actual score value
-	return: Integer. Score value. 
+    return: Integer. Score value. 
     """
-	raw = score_file.loc[lambda df: score_file['SUBJECTKEY'] == subject_id] #Get the raw from the excel that match the subject_key. The raw is from type pandas.series
-	score = raw[score_key].values[0]
-	mean = 100
-	sd = 15
-	below_avg = 0
-	avg = 1
-	above_avg = 2
-	if is_class == True:
-		if(score > (mean + sd)):
-			score = above_avg
-		elif (score < (mean - sd)):
-			score = below_avg
-		else:
-			score = avg
-	return score
+    raw = score_file.loc[lambda df: score_file['SUBJECTKEY'] == subject_id] #Get the raw from the excel that match the subject_key. The raw is from type pandas.series
+    score = -1
+    if(raw.empty == False):
+        score = raw[score_key].values[0]
+        mean = 100
+        sd = 15
+        below_avg = 0
+        avg = 1
+        above_avg = 2
+        if is_class == True:
+            if(score > (mean + sd)):
+                score = above_avg
+            elif (score < (mean - sd)):
+                score = below_avg
+            else:
+                score = avg
+    return score
 def createAugDataset(subjects_dict, min_scan_len, score_file, score_key, is_class):
     """Create augmented datasets. Each data with num of volumes >= min_scan_len, is augmented 5 times. 
         The times series are cut to min_scan_len, when the start point of the cutting is randomized 5 times.
@@ -83,14 +85,17 @@ def createAugDataset(subjects_dict, min_scan_len, score_file, score_key, is_clas
     time_series = []
     scores = []
     num_of_subjects=0
-    for key, val in subjects_data_dict.items():
+    rand_times = 5
+    for key, val in subjects_data_dict.items():        
         score = getScore(key, score_file, score_key, is_class) 
-        if(val["num_of_volumes"] >= min_scan_len):
-            while (rand_times > 0):
-                start = random.randrange(val["num_of_volumes"] - min_scan_len + 1)
-                time_series.append((val["time_series"][start:(start+min_scan_len)]).T)
-                scores.append(score)
-                rand_times-=1
+        if (score != -1):
+            if(val["num_of_volumes"] >= min_scan_len):
+                while (rand_times > 0):
+                    start = random.randrange(val["num_of_volumes"] - min_scan_len + 1)
+                    time_series.append((val["time_series"][start:(start+min_scan_len)]).T)
+                    scores.append(score)
+                    rand_times-=1
+        rand_times = 5
     return list(zip(time_series, scores))
 
 if __name__ == "__main__":
@@ -126,7 +131,7 @@ if __name__ == "__main__":
     subjects = createAugDataset(args.subjects_data_dict,args.min_scan_len, df, args.score_key, args.classification)
     #split the subjects to 3 datasets
     train_set, validate_set, test_set = splitToDatasets(subjects)
-    exit(1)
+
     if args.classification == True:
         suffix = "class"		
     else:
