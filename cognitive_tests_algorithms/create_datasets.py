@@ -28,13 +28,35 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
 
-	
-def getClassByMean(score):
+
+def getClassFor2a(score):
 	mean = 100
-	sd = 10
+	sd = 15
+	below_avg = 1
+	normal = 0
+	if (score < (mean - sd)):
+		score_class = below_avg
+	else:
+		score_class = normal
+	return score_class
+def getClassFor2b(score):
+	mean = 100
+	sd = 15
 	below_avg = 0
 	above_avg = 1
-	avg = 2
+	if (score < (mean - sd)):
+		score_class = below_avg
+	elif (score > (mean + sd)):
+		score_class = above_avg
+	else:
+		score_class = -1
+	return score_class	
+def getClassFor3(score):
+	mean = 100
+	sd = 15
+	below_avg = 0
+	avg = 1
+	above_avg = 2
 	if(score > (mean + sd)):
 		score_class = above_avg
 	elif (score < (mean - sd)):
@@ -54,24 +76,39 @@ def getClassByHist(score):
 	return score_class
 	
 def createDataset(data, label_type):
-	if label_type == 2 or label_type == 3:
-		data['label'] = data['label'].apply(getClassByMean)
-		if label_type == 2:
-			map = data['label'] < 2
-			data = data[map]
-	elif label_type == 4:
+	if label_type == '2a':
+		data['label'] = data['label'].apply(getClassFor2a)
+	elif label_type == '2b':
+		data['label'] = data['label'].apply(getClassFor2b)
+		map = data['label'] != -1
+		data = data[map]
+	elif label_type == '3':
+		data['label'] = data['label'].apply(getClassFor3)
+	elif label_type == '4':
 		data['label'] = data['label'].apply(getClassByHist)
-	print(data)
 	return data
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--data', required=True, type=str, help='path to excel files containing the data')
-	parser.add_argument('--label_type', required=True, type=int, help='4, 3 or 2 classes. 0 for regression')
+	parser.add_argument('--data', required=True, type=str, help='path to csv file containing the data')
+	parser.add_argument('--label_type', required=True, type=str, help='4, 3 or 2a (below vs normal), 2b(above vs below) classes. 0 for regression')
 	parser.add_argument('--out_folder', required=False, type=str, default=".", help='path to output folder. Default is current folder')
 	args = parser.parse_args()
 
-
+	if(args.label_type == "4"):
+		print("Created train and test datasets with 4 categorical classes, 0-4. each class frequency is approximately 25%")
+	elif(args.label_type == "3"):
+		print("Created train and test datasets with 3 categorical classes, 0-3. 0 - children below average, 1 - average, 2 - above average")
+	elif(args.label_type == "2a"):
+		print("Created train and test datasets with 2 categorical classes, 0-1. 1 - children below average, 0 - children normal range")
+	elif(args.label_type == "2b"):
+		print("Created train and test datasets with 2 categorical classes, 0-1. 0 - children below average, 1 - children above average")
+	elif(args.label_type == "0"):
+		print("Created train and test datasets with regression scores")
+	else:
+		print("Invalid label")
+		sys.exit()
+		
 	data_df = pd.read_csv(args.data)
 	data_df = data_df.drop('SUBJECTKEY', axis = 1)
 	
@@ -80,7 +117,6 @@ if __name__ == "__main__":
 	y = data['label']
 	X_train, X_test, y_train, y_test = train_test_split(X.values.tolist(), y.values.tolist(), test_size=0.1)
 	print("num_of_train: ", len(X_train)," num_of_test: ", len(X_test))
-		
 	#Save the datasets
 	data.to_csv(path_or_buf=args.out_folder + "/labeled_data.csv", index=False)
 	
