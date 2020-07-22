@@ -16,7 +16,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import itertools
 
-input_size = 52
 		   
 def load_checkpoint(model,filepath):
 	"""Load the model
