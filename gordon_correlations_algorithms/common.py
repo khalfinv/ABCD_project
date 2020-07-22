@@ -23,13 +23,13 @@ import numpy as np
 class corr_nn(nn.Module):
 	def __init__(self, input_size, num_classes):
 		super(corr_nn, self).__init__()
-		self.fc1 = nn.Linear(input_size, 64)
+		self.fc1 = nn.Linear(input_size, 32)
 		self.relu = nn.ReLU()
 		self.sig = nn.Sigmoid()
 		self.tanh = nn.Tanh()
 		self.rrelu = nn.RReLU()
 		self.leakyRelu = nn.LeakyReLU()
-		self.fc2 = nn.Linear(64, 64)
+		self.fc2 = nn.Linear(32, 64)
 		self.fc3 = nn.Linear(64, num_classes)
 		self.dropout = nn.Dropout(p=0.2)
 		self.bn1 = nn.BatchNorm1d(64)
@@ -40,25 +40,23 @@ class corr_nn(nn.Module):
 		out = self.dropout(out)
 		out = self.leakyRelu(out)
 		out = self.fc2(out)
-		out = self.dropout(out)
 		out = self.leakyRelu(out)
 		out = self.fc3(out)
 		return out
 		
-class TimeseriesDataset(data.Dataset):
+class CorrelationDataset(data.Dataset):
 	def __init__(self, dataset_path):
 		pkl_file = open(dataset_path, 'rb')
 		subjects = pickle.load(pkl_file)
-		res = list(zip(*subjects))
-		self.x = res[0]
-		self.y = res[1]	
+		self.X = subjects["X"]
+		self.y = subjects["y"]
 		pkl_file.close()
 				
 	def __len__(self):
-		return len(self.x)
+		return len(self.X)
 
 	def __getitem__(self, idx):
-		corr = self.x[idx]
+		corr = self.X[idx]
 		score = self.y[idx]
 		return torch.FloatTensor(corr), score
 		
