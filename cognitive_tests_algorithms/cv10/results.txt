@@ -1,4 +1,0 @@
-[[305.  28.]
- [ 44.  47.]]
-False Positive: 0->128.0 6.604% False Negative: 1->044.0 10.377%
-accuracy: 83.019
