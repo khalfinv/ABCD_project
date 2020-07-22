@@ -19,8 +19,8 @@ import numpy as np
 
 # Hyper Parameters
 num_epochs = 150
-batch_size = 30
-learning_rate = 0.00001
+batch_size = 20
+learning_rate = 0.001
 
 	
 def save_checkpoint(model,filepath):
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 	# Loss and Optimizer
 	#criterion = nn.CrossEntropyLoss(weight=torch.tensor([0.34, 0, 0.66]))
 	criterion = nn.CrossEntropyLoss()
-	optimizer = torch.optim.Adam(cogtests_nn.parameters(),lr = learning_rate)
+	optimizer = torch.optim.SGD(cogtests_nn.parameters(),lr = learning_rate)
 	trainLossArr = []
 	trainErrArr = []
 	evaluateLossArr = []
