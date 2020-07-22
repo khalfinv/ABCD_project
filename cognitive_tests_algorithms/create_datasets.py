@@ -91,7 +91,7 @@ def createDataset(data, label_type):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--data', required=True, type=str, help='path to csv file containing the data')
-	parser.add_argument('--label_type', required=True, type=str, help='4, 3 or 2a (below vs normal), 2b(above vs below) classes. 0 for regression')
+	parser.add_argument('--label_type', required=False, type=str, help='4, 3 or 2a (below vs normal), 2b(above vs below) classes. Leave empty if you do not want any processing of the labels')
 	parser.add_argument('--out_folder', required=False, type=str, default=".", help='path to output folder. Default is current folder')
 	args = parser.parse_args()
 
@@ -105,20 +105,21 @@ if __name__ == "__main__":
 		print("Created train and test datasets with 2 categorical classes, 0-1. 0 - children below average, 1 - children above average")
 	elif(args.label_type == "0"):
 		print("Created train and test datasets with regression scores")
-	else:
+	elif (args.label_type != None):
 		print("Invalid label")
 		sys.exit()
 		
 	data_df = pd.read_csv(args.data)
-	data_df = data_df.drop('SUBJECTKEY', axis = 1)
+	data_df = data_df.drop(['SUBJECTKEY','SEX'], axis = 1)
 	
-	data = createDataset(data_df,args.label_type)
-	X = data.drop('label', axis = 1)
-	y = data['label']
+	if args.label_type != None:
+		data_df = createDataset(data_df,args.label_type)
+	X = data_df.drop('label', axis = 1)
+	y = data_df['label']
 	X_train, X_test, y_train, y_test = train_test_split(X.values.tolist(), y.values.tolist(), test_size=0.1)
 	print("num_of_train: ", len(X_train)," num_of_test: ", len(X_test))
 	#Save the datasets
-	data.to_csv(path_or_buf=args.out_folder + "/labeled_data.csv", index=False)
+	data_df.to_csv(path_or_buf=args.out_folder + "/labeled_data.csv", index=False)
 	
 	train_file = open(args.out_folder + "/train_set.pkl", mode="wb")
 	pickle.dump({"X": X_train, "y": y_train}, train_file)
