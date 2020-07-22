@@ -5,11 +5,15 @@ import multiprocessing as mp
 import test
 
 def run_train_test(cv_data_folder, i):
-	cv_path = os.path.join(cv_data_folder,("cv" + str(i+1)))
-	subprocess.call("train.py --data_folder " + cv_path +  " --out_folder " + cv_path , shell=True)
-	validate_set_path = os.path.join(cv_path,"validate_set.pkl")
-	model_path = os.path.join(cv_path,"cogtests_nn_model.pkl")
-	return test.testFunc(validate_set_path,model_path,cv_path)
+	try:
+		cv_path = os.path.join(cv_data_folder,("cv" + str(i+1)))
+		subprocess.call("train.py --data_folder " + cv_path +  " --out_folder " + cv_path , shell=True)
+		validate_set_path = os.path.join(cv_path,"validate_set.pkl")
+		model_path = os.path.join(cv_path,"cogtests_nn_model.pkl")
+		accuracy, f1_score_macro, f1_score_weighted = test.testFunc(validate_set_path,model_path,cv_path)
+	except:
+		raise Exception( "i: %s \n" % i + str(sys.exc_info()[1])).with_traceback(sys.exc_info()[2])
+	return (accuracy, f1_score_macro, f1_score_weighted)
 
 def collect_errors(exception):
 	""" Callback for errors collecting from threads. Get the exception and write to file
@@ -17,7 +21,7 @@ def collect_errors(exception):
 	"""
 	print(exception)
 	
-def collect_results(accuracy, f1_macro, f1_weighted):
+def collect_results(result):
 	"""Collect the results from postProcessing function. 
 	   Insert the result to allParticipantsDic.
 	param result: dictionary raw. 
@@ -29,6 +33,9 @@ def collect_results(accuracy, f1_macro, f1_weighted):
 	global total_acc
 	global total_f1_macro
 	global total_f1_weighted
+	accuracy = result[0]
+	f1_macro = result[1]
+	f1_weighted = result[2]
 	total_acc+=accuracy
 	total_f1_macro+=f1_macro
 	total_f1_weighted+=f1_weighted
