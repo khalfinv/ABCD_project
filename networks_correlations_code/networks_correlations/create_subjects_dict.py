@@ -104,7 +104,7 @@ if __name__ == "__main__":
     splitedLines = [ ]
     coords = []
     for line in mniCoordsFile.read().splitlines():
-        splitedLine = line.decode().split(' ')
+        splitedLine = line.decode().split()
         newCoord = []
         for part in splitedLine:
             if part != '':
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
 
     # Init multiprocessing.Pool()
-    num_of_cpu = mp.cpu_count()
+    num_of_cpu = 4
     pool = mp.Pool(num_of_cpu)
     # For each subject run the postprocessing steps
     subject_key = 0

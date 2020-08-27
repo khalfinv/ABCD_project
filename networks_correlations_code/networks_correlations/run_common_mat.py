@@ -236,7 +236,6 @@ if __name__ == "__main__":
 	if (args.networks != None and args.atlas is None):
 		print ("--atlas is required. Use -h for more details")
 		exit(1)
-
 	# generated new common covariance and correlation matrices
 	pkl_file = open(args.subjects_data_dict, 'rb')
 	allParticipantsDict = pickle.load(pkl_file)
@@ -269,5 +268,7 @@ if __name__ == "__main__":
 			runSomeNetworks(common_cov_mat, common_cor_mat,args.out_folder,args.networks, coords, args.min_r)
 	sumCorrScore(args.out_folder, common_cor_mat)
 	#Plot the full common matrices
-	ticks = [0,28,58,63,77,90,148,153,184,209,227,240,249,260,264]
+	#ticks = [0,28,58,63,77,90,148,153,184,209,227,240,249,260,264]
+	ticks = [net[0] for net in networkToIndexDic.dic.values()]
+	ticks.append(264)
 	plotMatrix(common_cor_mat, args.out_folder + "/common_cor_matrix.png",networkToIndexDic.dic.keys(), "Common correlation matrix", ticks, -1., 1.)
