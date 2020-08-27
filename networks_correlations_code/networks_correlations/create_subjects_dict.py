@@ -124,7 +124,9 @@ if __name__ == "__main__":
 
 
     # Init multiprocessing.Pool()
-    num_of_cpu = 4
+    num_of_cpu = mp.cpu_count()
+    if (num_of_cpu > 4):
+        num_of_cpu = 4
     pool = mp.Pool(num_of_cpu)
     # For each subject run the postprocessing steps
     subject_key = 0
