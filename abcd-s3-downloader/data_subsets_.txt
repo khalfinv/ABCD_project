@@ -64,3 +64,4 @@ inputs.func.task-nback
 inputs.func.task-rest
 inputs.func.task-SST
 sourcedata.func.task_events
+derivatives.func.concat_task-rest_bold_atlas-Gordon2014FreeSurferSubcortical_desc-filtered_timeseries

@@ -246,12 +246,9 @@ def download_s3_files(s3_links_arr, output_dir, log_dir, pool_size=1):
     # make unique s3 downloads
     print('Creating download commands...')
     for s3_path, dest in sorted(download_set, key=lambda x: x[1]):
-        commands.append( ' ; '.join( [
-                "mkdir " + os.path.dirname(dest),
-                "aws s3 cp " + s3_path + " " + dest + " --profile NDA"
-            ] )
-        )
-
+        commands.append("mkdir " + os.path.dirname(dest))
+        commands.append("aws s3 cp " + s3_path + " " + dest + " --profile NDA")
+    print(commands)
     if pool_size == 1:
         print('\nDownloading files serially...')
     elif pool_size > 1:
@@ -260,20 +257,25 @@ def download_s3_files(s3_links_arr, output_dir, log_dir, pool_size=1):
         print('\nCannot download with less than 1 core.  Try changing your "-p" argument.  Quitting...')
         sys.exit()
 
+    #s3_path = re.search('.+aws\ s3\ cp\ (s3://.+)\ ' + output_dir + '.+', commands[0])
+    #print(s3_path)
     pool = Pool(pool_size) # pool_size concurrent commands at a time
     for i, returncode in enumerate(pool.imap(partial(call, shell=True), commands)):
-        s3_path = re.search('.+aws\ s3\ cp\ (s3://.+)\ ' + output_dir + '.+', commands[i]).group(1)
+        print(i)
+        #s3_path = re.search('.+aws\ s3\ cp\ (s3://.+)\ ' + output_dir + '.+', commands[i]).group(1)
         if returncode == 0:
-            with open(success_log, 'a+') as s:
-                s.write(s3_path + '\n')
+            # with open(success_log, 'a+') as s:
+                # s.write(s3_path + '\n')
+            print( "Command succeed: {}".format(commands[i]) )
         else:
             print( "Command failed: {}".format(commands[i]) )
 
-            bad_download.append(s3_path)
-            with open(failed_log, 'a+') as f:
-                f.write(s3_path + '\n')
+            # bad_download.append(s3_path)
+            # with open(failed_log, 'a+') as f:
+                # f.write(s3_path + '\n')
 
-            bad_download.append(commands[i])
+            # bad_download.append(commands[i])
+        
 
     pool.close()
 

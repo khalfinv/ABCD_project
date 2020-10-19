@@ -1,4 +1,9 @@
 collection_3165_manifest_s3_links.csv
 derivative_subsets.txt
 src/__pycache__/
+datastructure_manifest.txt
+data_subsets.txt
+subjects_list.txt
+Connectivity_Matrix
+Gordon_time_series
 
