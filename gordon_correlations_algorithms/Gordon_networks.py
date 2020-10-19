@@ -1,12 +1,5 @@
 #!/usr/bin/python3
-"""
-==========================================================================================================================
-Dictionary of all power networks. Key: network's name, Value: the indexes according to the order of the Power coordinates.
-The indexes are suitable for the common correlation and covariance matrices.
-==========================================================================================================================
-"""
 
-import numpy as np
 
 networks_list=["Auditory-Auditory", "Auditory-CO", "Auditory-CP", "Auditory-DMN", "Auditory-DAN", "Auditory-FP", "Auditory-none", "Auditory-retrosplenial temporal",
 "Auditory-SSH", "Auditory-SSM", "Auditory-Salience", "Auditory-VAN", "Auditory-Visual", "CO-Auditory", "CO-CO", "CO-CP", "CO-DMN", "CO-DAN", "CO-FP",
