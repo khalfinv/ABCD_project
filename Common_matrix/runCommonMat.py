@@ -232,7 +232,7 @@ if __name__ == "__main__":
 			splitedLine = line.decode().split(' ')
 			newCoord = []
 			for part in splitedLine:
-				if part is not '':
+				if part != '':
 					newCoord.append(float(part))
 			coords.append(newCoord)
 		mniCoordsFile.close()

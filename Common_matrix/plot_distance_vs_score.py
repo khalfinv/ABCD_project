@@ -77,7 +77,10 @@ def score_vs_distance(networks,common_cov_mat,common_cor_mat,allMatDict, scores_
 			subject_key = subject_key.split("NDAR")
 			subject_key = "NDAR_" + subject_key[1]
 			raw = scores_file.loc[lambda scores_file: scores_file['SUBJECTKEY'] == subject_key] #Get the raw from the excel that match the subject_key. The raw is from type pandas.series
-			dist_to_score_dict[subject_key] = {"corr_distance" : dis_corr, "cov_distance" : dis_cov, "score" : raw[score_key].values[0]}
+			if raw.empty == False:
+				dist_to_score_dict[subject_key] = {"corr_distance" : dis_corr, "cov_distance" : dis_cov, "score" : raw[score_key].values[0]}
+			else:
+				print(subject_key, "not found")
 			
 	all_scores = []
 	all_corr_distances = []
