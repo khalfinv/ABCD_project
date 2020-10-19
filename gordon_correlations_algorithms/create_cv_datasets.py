@@ -18,21 +18,10 @@ K folders. In each folder there will two pkl files:
 import os, sys, pickle, argparse, re
 import random
 from sklearn.model_selection import KFold
-
-def createDataset(score_file, score_X, score_Y):
-	random.seed()
-	scores_X = []
-	scores_Y = []
-	num_of_subjects=0
-	new_score_file = score_file[score_X+[score_Y]].dropna()
-	for _,raw in new_score_file.iterrows():
-		score_class = getScore(raw[score_Y])
-		if(score_class == 1):
-			continue
-		scores_Y.append(score_class)
-		scores_X.append(raw[score_X].to_list())
-
-	return list(zip(scores_X, scores_Y))
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.pipeline import Pipeline
+from collections import Counter
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
@@ -60,6 +49,21 @@ if __name__ == "__main__":
 		if (os.path.exists(dir_path) == False):
 			os.mkdir(dir_path)
 		i+=1
+		
+		# transform the train dataset
+		print(Counter(y_train)[0])
+		dict_over = {0:Counter(y_train)[0], 1:Counter(y_train)[1], 2:int(Counter(y_train)[1]*0.5), 3:int(Counter(y_train)[1]*0.5)}
+		over = SMOTE(sampling_strategy=dict_over)
+		X_train, y_train = over.fit_resample(X_train, y_train)
+		dict_under = {0:Counter(y_train)[0], 1:int(Counter(y_train)[1]*0.7), 2:Counter(y_train)[2], 3:Counter(y_train)[3]}
+		under = RandomUnderSampler(sampling_strategy=dict_under)
+		X_train, y_train = under.fit_resample(X_train, y_train)
+		
+		# summarize the new class distribution
+		counter_train = Counter(y_train)
+		print("Train: ", counter_train)
+		counter_test = Counter(y_test)
+		print("Test: ", counter_test)
 		#Save the datasets	
 		train_file = open(dir_path + "/train_set.pkl", mode="wb")
 		pickle.dump({"X": X_train, "y": y_train}, train_file)
