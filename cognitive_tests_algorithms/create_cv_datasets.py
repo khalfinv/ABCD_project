@@ -18,6 +18,8 @@ K folders. In each folder there will two pkl files:
 import os, sys, pickle, argparse, re
 import random
 from sklearn.model_selection import KFold
+import shutil
+
 
 def createDataset(score_file, score_X, score_Y):
 	random.seed()
@@ -56,8 +58,9 @@ if __name__ == "__main__":
 		X_test = [X[i] for i in test_index]
 		y_test = [y[i] for i in test_index]
 		dir_path = args.out_folder + "/cv"+str(i)
-		if (os.path.exists(dir_path) == False):
-			os.mkdir(dir_path)
+		if (os.path.exists(dir_path) == True):
+			shutil.rmtree(dir_path)
+		os.mkdir(dir_path)
 		i+=1
 		#Save the datasets	
 		train_file = open(dir_path + "/train_set.pkl", mode="wb")
