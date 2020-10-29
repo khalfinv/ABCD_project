@@ -45,7 +45,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--cv_data_folder', required=True, help='path to folder contaning all cross validation folders')
 	args = parser.parse_args()
-	K = 10
+	K = len(next(os.walk(args.cv_data_folder))[1])
 	total_acc = 0
 	total_f1_macro = 0
 	total_f1_weighted = 0
