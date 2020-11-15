@@ -55,7 +55,7 @@ if __name__ == '__main__':
 					cov_measure = ConnectivityMeasure(cov_estimator=LedoitWolf(assume_centered=False, block_size=1000, store_precision=False), kind='covariance')
 					cov = []
 					cov = cov_measure.fit_transform([time_series])[0, :, :]
-					subjects_dic_final[subject_folder] = {"time_series" : time_series, "cov_mat" : cov}
+					subjects_dic_final[subject_folder] = {"time_series" : time_series, "covariance" : cov}
 				else:
 					print(full_path, " does not exists!!!")
 					
