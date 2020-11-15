@@ -36,8 +36,6 @@ import seaborn as sns
 import pandas as pd
 
 
-labelToColorDic = {"Uncertain" : "olive", "SSH" : "cyan", "SSM" : "orange", "CO" : "purple", "Auditory" : "m", "DMN" : "red", "Memory" : "grey", 
-	"Visual" : "blue", "FP" : "gold", "Salience" : "black", "Subcortical" : "brown", "VAN" : "teal", "DAN" : "green", "Cerebellum" : "purple"}
 
 def createCommonMat(subjects_data_dict):
 	"""Create common covariance and correlation matrices
@@ -79,7 +77,7 @@ def plotMatrix(matrix, plot_path, labels, title, ticks, vmin, vmax):
 	ax.grid(color='black', linestyle='-', linewidth=1.2, which='minor')
 	plt.title(label = title, fontsize = 20)
 	for item in (ax.get_xticklabels() + ax.get_yticklabels()):
-		item.set_color(labelToColorDic[item.get_text()])
+		item.set_color(networkToIndexDic.labelToColorDic[item.get_text()])
 		item.set_fontsize(14)
 	plotting.plot_matrix(matrix, colorbar=True, axes = ax, vmin=vmin, vmax=vmax)
 	fig.savefig(plot_path)
@@ -150,12 +148,12 @@ def plotConnectome(matrix, coords, networks, out_folder, min_r):
 	index2network = {}
 	last_index = 0
 	for network in networks:
-		network_color = [labelToColorDic[network]] * len(list(networkToIndexDic.dic[network]))
+		network_color = [networkToIndexDic.labelToColorDic[network]] * len(list(networkToIndexDic.dic[network]))
 		colors = colors + network_color
 		for i in range(last_index, last_index + len(list(networkToIndexDic.dic[network]))):
 			index2network[i] = network
 			last_index = i+1
-		network_patch = mpatches.Patch(color=labelToColorDic[network], label=network)
+		network_patch = mpatches.Patch(color=networkToIndexDic.labelToColorDic[network], label=network)
 		patches_list.append(network_patch)
 	correlated_coords = {} 
 	for i in range(1,len(matrix)):
