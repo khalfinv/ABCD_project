@@ -217,11 +217,12 @@ def runSomeNetworks(common_cov_mat,common_cor_mat,out_folder, networks , coords,
 		else:
 			print ( "The " + network + " network does not exist!!!")
 	common_cor_mat_sliced = common_cor_mat[listToSlice, :][:, listToSlice] 
-	coords_sliced = [coords[i] for i in listToSlice]
+	#coords_sliced = [coords[i] for i in listToSlice]
 	plotMatrix(common_cor_mat_sliced, out_folder + "/common_cor_matrix_" + str(networks) + ".png", networks, "Common correlation matrix", ticks, -1., 1.)
-	plotConnectome(common_cor_mat_sliced, coords_sliced, networks, out_folder, min_r)
+	#plotConnectome(common_cor_mat_sliced, coords_sliced, networks, out_folder, min_r)
 
 if __name__ == "__main__":
+	start = time.time()
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--out_folder', required=True, type=str, help='output folder for common matrices pkl file (if generated) and plots')
 	parser.add_argument('--subjects_data_dict', required=True, type=str, help='path to pkl file containing the subjects data dictionary')
@@ -270,3 +271,10 @@ if __name__ == "__main__":
 	ticks = [net[0] for net in networkToIndexDic.dic.values()]
 	ticks.append(264)
 	plotMatrix(common_cor_mat, args.out_folder + "/common_cor_matrix.png",networkToIndexDic.dic.keys(), "Common correlation matrix", ticks, -1., 1.)
+	
+	#print the exucation time
+	end = time.time()
+	timeInSeconds = (end - start)
+	timeInMinutes = timeInSeconds / 60
+	timeInHours = int(timeInMinutes / 60)
+	print ("Total time : " + str(timeInHours) + " hours and " + str(int(timeInMinutes % 60)) + " minutes")	
