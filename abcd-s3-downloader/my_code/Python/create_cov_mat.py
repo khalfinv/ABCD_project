@@ -45,7 +45,9 @@ if __name__ == '__main__':
 			subject_folder_full = os.path.join(args.time_series_folder,subject_folder)
 			if(os.path.isdir(subject_folder_full)):
 				full_path = os.path.join(subject_folder_full,"ses-baselineYear1Arm1\\func","time_series.csv")
-				if(os.path.exists(full_path)):					
+				if(os.path.exists(full_path)):	
+					subject_key = subject_folder.split('-')[1]
+					subject_key = subject_key[:4] + '_' + subject_key[4:]
 					time_series = pd.read_csv(full_path, header=None).to_numpy()
 					left_indexes = subjects_dic_censored_indexes[subject_folder]["left_indexes"]
 					if(len(left_indexes) < 750):
@@ -55,7 +57,7 @@ if __name__ == '__main__':
 					cov_measure = ConnectivityMeasure(cov_estimator=LedoitWolf(assume_centered=False, block_size=1000, store_precision=False), kind='covariance')
 					cov = []
 					cov = cov_measure.fit_transform([time_series])[0, :, :]
-					subjects_dic_final[subject_folder] = {"time_series" : time_series, "covariance" : cov}
+					subjects_dic_final[subject_key] = {"time_series" : time_series, "covariance" : cov}
 				else:
 					print(full_path, " does not exists!!!")
 					
