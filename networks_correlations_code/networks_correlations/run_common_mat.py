@@ -117,10 +117,8 @@ def sumCorrScore(out_folder, common_cor_mat):
 		new_raw = {}
 		r_sum = 0
 		count = 0
-		start_index = networkToIndexDic.dic[network][0]
-		end_index = networkToIndexDic.dic[network][-1] + 1
-		for i in range(start_index + 1, end_index) :
-			for j in range(start_index, i):
+		for i in networkToIndexDic.dic[network]:
+			for j in networkToIndexDic.dic[network]:
 				r_sum = r_sum + common_cor_mat[i][j]
 				count = count + 1
 		mean_corr = r_sum / count
@@ -217,9 +215,9 @@ def runSomeNetworks(common_cov_mat,common_cor_mat,out_folder, networks , coords,
 		else:
 			print ( "The " + network + " network does not exist!!!")
 	common_cor_mat_sliced = common_cor_mat[listToSlice, :][:, listToSlice] 
-	#coords_sliced = [coords[i] for i in listToSlice]
+	coords_sliced = [coords[i] for i in listToSlice]
 	plotMatrix(common_cor_mat_sliced, out_folder + "/common_cor_matrix_" + str(networks) + ".png", networks, "Common correlation matrix", ticks, -1., 1.)
-	#plotConnectome(common_cor_mat_sliced, coords_sliced, networks, out_folder, min_r)
+	plotConnectome(common_cor_mat_sliced, coords_sliced, networks, out_folder, min_r)
 
 if __name__ == "__main__":
 	start = time.time()
@@ -277,4 +275,5 @@ if __name__ == "__main__":
 	timeInSeconds = (end - start)
 	timeInMinutes = timeInSeconds / 60
 	timeInHours = int(timeInMinutes / 60)
+	print ("run_common_mat exucation time")
 	print ("Total time : " + str(timeInHours) + " hours and " + str(int(timeInMinutes % 60)) + " minutes")	
