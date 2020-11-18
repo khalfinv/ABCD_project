@@ -35,4 +35,4 @@ dic = {
 
 labelToColorDic = {"None" : "olive", "SSH" : "cyan", "SSM" : "orange", "CO" : "purple", "Auditory" : "m", "DMN" : "red", "RetrosplenialTemporal" : "grey", 
 	"Visual" : "blue", "FP" : "gold", "Salience" : "black", "CP" : "brown", "VAN" : "teal", "DAN" : "green", "CEREBELLUM" : "royalblue", "THALAMUS" : "lime", 
-	"CAUDATE" : "coral", "PUTAMEN" : "crimson", "BRAIN_STEM" : "khaki", "HIPPOCAMPUS" : "seagreen", "AMYGDALA" : "navy", "ACCUMBENS" : "hotpink", "DIENCEPHALON_VENTRAL" : "yellow"}
+	"CAUDATE" : "coral", "PUTAMEN" : "crimson", "PALLIDUM" : "slateblue", "BRAIN_STEM" : "khaki", "HIPPOCAMPUS" : "seagreen", "AMYGDALA" : "navy", "ACCUMBENS" : "hotpink", "DIENCEPHALON_VENTRAL" : "yellow"}

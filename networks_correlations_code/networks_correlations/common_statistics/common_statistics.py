@@ -76,7 +76,7 @@ def est_common_cov(covars, outliers=0):
     # drop_idxs = []
     for i in range(0, d):
         if PARALLEL:
-            with mp.Pool(10) as pool:
+            with mp.Pool(5) as pool:
                 output = pool.map(_est_fixed_index, zip(repeat(S), covars, repeat(c)))
         else:
             output = [_est_fixed_index(i) for i in zip(repeat(S), covars, repeat(c))]

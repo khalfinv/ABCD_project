@@ -117,14 +117,17 @@ def sumCorrScore(out_folder, common_cor_mat):
 		new_raw = {}
 		r_sum = 0
 		count = 0
-		for i in networkToIndexDic.dic[network]:
-			for j in networkToIndexDic.dic[network]:
-				r_sum = r_sum + common_cor_mat[i][j]
+		parcels = networkToIndexDic.dic[network]
+		num_of_parcels = len(networkToIndexDic.dic[network])
+		for i in range(num_of_parcels):
+			for j in range(i+1,num_of_parcels):
+				r_sum = r_sum + common_cor_mat[parcels[i]][parcels[j]]
 				count = count + 1
-		mean_corr = r_sum / count
-		new_raw['networks name'] = network + '_' + network
-		new_raw['correlation score'] = mean_corr
-		df_raws.append(new_raw)
+		if (num_of_parcels > 1):
+			mean_corr = r_sum / count
+			new_raw['networks name'] = network + '_' + network
+			new_raw['correlation score'] = mean_corr
+			df_raws.append(new_raw)
 		#print ("r_sum: ", r_sum, " count: ", count, " mean: ", mean_corr)
 		
 	#Save to excel file
@@ -167,10 +170,12 @@ def plotConnectome(matrix, coords, networks, out_folder, min_r):
 		fig.legend(handles=patches_list, loc = "upper center")
 		fig.savefig(plot_name)
 		plt.close()
+	view = plotting.view_connectome(matrix, coords, edge_threshold="80%") 
+	html_name = out_folder + "/brain_plot" + str(networks) + ".html"
+	view.save_as_html(html_name)
 	
-def runAllCombinations(common_cov_mat, common_cor_mat, out_folder, coords, min_r):
+def runAllCombinations(common_cor_mat, out_folder, coords, min_r):
 	"""Create plots of ovariance and correlation matrices for all combinations of 2 networks. 
-	param common_cov_mat: two dimensional array (264,264). The common covariance matrix with all networks
 	param common_cor_mat: two dimensional array (264, 264).The common correlation matrix with all networks
 	param out_folder: string. The path of output folder
 	param coords: list.List of atlas coordinates
@@ -186,18 +191,18 @@ def runAllCombinations(common_cov_mat, common_cor_mat, out_folder, coords, min_r
 		# The networkToIndexDic dictionary contains for each network the location (indexes) in the common matrix. 		
 		listToSlice = listToSlice + list(networkToIndexDic.dic[network1])
 		listToSlice = listToSlice + list(networkToIndexDic.dic[network2])
-		common_cov_mat_sliced = common_cov_mat[listToSlice, :][:, listToSlice] 
 		common_cor_mat_sliced = common_cor_mat[listToSlice, :][:, listToSlice]		
-		coords_sliced = [coords[i] for i in listToSlice]
 		ticks = [0, len(networkToIndexDic.dic[network1]), len(networkToIndexDic.dic[network1]) + len(networkToIndexDic.dic[network2])]                                                                                                                                                                                                                                              
 		plotMatrix(common_cor_mat_sliced, out_folder + "/common_cor_matrix_" + network1 + "_" + network2 + ".png", [network1, network2], "Common correlation matrix", ticks, -1., 1.)
-		plotConnectome(common_cor_mat_sliced, coords_sliced, pair, out_folder, min_r)
+		#Plot brain connectome if all coordinates exists for those networks
+		if(max(listToSlice) < len(coords)):
+			coords_sliced = [coords[i] for i in listToSlice]
+			plotConnectome(common_cor_mat_sliced, coords_sliced, pair, out_folder, min_r)
 
 				   
-def runSomeNetworks(common_cov_mat,common_cor_mat,out_folder, networks , coords, min_r):
+def runSomeNetworks(common_cor_mat,out_folder, networks , coords, min_r):
 	"""Create plots of covariance and correlation matrices for specific networks 
-	param common_cov_mat: two dimensional array (264,264). The common covariance matrix with all networks
-	param common_cor_mat : two dimensional array (264, 264).The common correlation matrix with all networks
+	param common_cor_mat : two dimensional array (number of parcels, number of parcels).The common correlation matrix with all networks
 	param out_folder: string. The path of output folder
 	param networks: list. List of networks for matrices generating
 	return: None
@@ -215,9 +220,11 @@ def runSomeNetworks(common_cov_mat,common_cor_mat,out_folder, networks , coords,
 		else:
 			print ( "The " + network + " network does not exist!!!")
 	common_cor_mat_sliced = common_cor_mat[listToSlice, :][:, listToSlice] 
-	coords_sliced = [coords[i] for i in listToSlice]
 	plotMatrix(common_cor_mat_sliced, out_folder + "/common_cor_matrix_" + str(networks) + ".png", networks, "Common correlation matrix", ticks, -1., 1.)
-	plotConnectome(common_cor_mat_sliced, coords_sliced, networks, out_folder, min_r)
+	#Plot brain connectome if all coordinates exists for those networks
+	if(max(listToSlice) < len(coords)):
+		coords_sliced = [coords[i] for i in listToSlice]
+		plotConnectome(common_cor_mat_sliced, coords_sliced, networks, out_folder, min_r)
 
 if __name__ == "__main__":
 	start = time.time()
@@ -238,10 +245,12 @@ if __name__ == "__main__":
 	allParticipantsDict = pickle.load(pkl_file)
 	pkl_file.close()
 	(common_cov_mat, common_cor_mat) = createCommonMat(allParticipantsDict)
+	num_of_parcels = common_cor_mat.shape[0]
 	#Save common correlation to excel
-	columns = []
-	for network in networkToIndexDic.dic.keys():
-		columns = columns + ([network] * len(list(networkToIndexDic.dic[network])))
+	columns = [""] * num_of_parcels
+	for network,indexes in networkToIndexDic.dic.items():
+		for i in indexes:
+			columns[i] = network
 	df = pd.DataFrame(common_cor_mat, columns = columns,  index=columns)
 	df.to_excel(args.out_folder + "/correlation_matrix.xlsx")
 
@@ -260,14 +269,13 @@ if __name__ == "__main__":
 
 	if (args.networks != None):
 		if(args.networks == ["all"]):
-			runAllCombinations(common_cov_mat, common_cor_mat, args.out_folder, coords, args.min_r) 
+			runAllCombinations(common_cor_mat, args.out_folder, coords, args.min_r) 
 		else:
-			runSomeNetworks(common_cov_mat, common_cor_mat,args.out_folder,args.networks, coords, args.min_r)
+			runSomeNetworks(common_cor_mat,args.out_folder,args.networks, coords, args.min_r)
 	sumCorrScore(args.out_folder, common_cor_mat)
 	#Plot the full common matrices
-	#ticks = [0,28,58,63,77,90,148,153,184,209,227,240,249,260,264]
 	ticks = [net[0] for net in networkToIndexDic.dic.values()]
-	ticks.append(264)
+	ticks.append(num_of_parcels)
 	plotMatrix(common_cor_mat, args.out_folder + "/common_cor_matrix.png",networkToIndexDic.dic.keys(), "Common correlation matrix", ticks, -1., 1.)
 	
 	#print the exucation time
