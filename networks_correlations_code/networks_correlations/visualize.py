@@ -1,4 +1,22 @@
+#!/usr/bin/python3
+"""
+==============================================================================================================
+Visualize connections between ROIs
+==============================================================================================================
 
+@Input:  
+out_folder = string. Output folder
+corr_mat = string. Path to correlation matrix's excel file 
+cov_mat = string. Path to covariance matrix's excel file . Optional
+networks = list. Choose networks for ploting. You can choose all combinations. Optional.  
+atlas = string. Path to text file with the atlas' coordinates. Required if networks exists.
+min_r = float. Minimal R value (0-1) for brain connections plotting. The default is 0.7. 
+
+
+@Output: 
+Correlation and covariance matrices plots.
+If networks input exists - Correlation and covariance matrices plots for networks, brain plots and excel file of the sub correlation\covariance matrices. 
+"""
 from nilearn import plotting
 import os, sys, pickle, argparse
 import matplotlib.pyplot as plt
@@ -8,12 +26,13 @@ import pandas as pd
 import networkToIndexDic
 import itertools
 
-def plotConnectome(matrix, coords, networks, out_folder, min_r):
+def plotConnectome(matrix, coords, networks, out_folder, base_name, min_r):
 	"""Creates brain plot with connections according to minimum R value
 	param matrix: two dimensional array. The correlation matrix
-	param coords : list. Coordinates of thye networks
+	param coords : list. Coordinates of the networks
 	param networks: list. Networks names.
 	param out_folder: string. Output folder for brain plot
+	param base_name: string. Base name
 	param min_r: float. The minimun R value for connection plotting.
 	return: None
 	"""
@@ -34,7 +53,7 @@ def plotConnectome(matrix, coords, networks, out_folder, min_r):
 		for j in range(i):
 			if(matrix[i][j] >= min_r):
 				correlated_coords[matrix[i][j]] = ({index2network[i] : coords[i]}, {index2network[j] : coords[j]})
-	plot_name = out_folder + "/brain_plot" + str(networks) + ".png"
+	plot_name = out_folder + "/" + base_name + "_brain_plot" + str(networks) + ".png"
 	if(len(correlated_coords) > 0):
 		fig = plt.figure()
 		title = "Threshold : " + str(min_r)
@@ -44,7 +63,7 @@ def plotConnectome(matrix, coords, networks, out_folder, min_r):
 		fig.savefig(plot_name)
 		plt.close()
 	view = plotting.view_connectome(matrix, coords, edge_threshold=min_r, node_size = 7) 
-	html_name = out_folder + "/brain_plot" + str(networks) + ".html"
+	html_name = out_folder + "/" + base_name + "_brain_plot" + str(networks) + ".html"
 	view.save_as_html(html_name)
 	
 	
@@ -76,11 +95,13 @@ def plotMatrix(matrix, plot_path, labels, title, ticks, vmin, vmax):
 	fig.savefig(plot_path)
 	plt.close()
 	
-def plotAllCombinations(common_cor_mat, out_folder, coords, min_r):
-	"""Create plots of ovariance and correlation matrices for all combinations of 2 networks. 
-	param common_cor_mat: two dimensional array (264, 264).The common correlation matrix with all networks
+def plotAllCombinations(common_mat, base_name, out_folder, coords, min_r):
+	"""Create plots of covariance\correlation matrices for all combinations of 2 networks. 
+	param common_mat: data frame.The common matrix with all networks
+	param base_name: string. Base name for the output files
 	param out_folder: string. The path of output folder
 	param coords: list.List of atlas coordinates
+	param min_r: float. The minimun R value for connection plotting.
 	return: None
 	"""
 	print("Plot correlations between every two networks")
@@ -89,74 +110,78 @@ def plotAllCombinations(common_cor_mat, out_folder, coords, min_r):
 		listToSlice = []
 		network1 = (pair)[0]
 		network2 = (pair)[1]
-		#print (network1, network2)
 		# The networkToIndexDic dictionary contains for each network the location (indexes) in the common matrix. 		
 		listToSlice = listToSlice + list(networkToIndexDic.dic[network1])
 		listToSlice = listToSlice + list(networkToIndexDic.dic[network2])
-		common_cor_mat_sliced = common_cor_mat.iloc[listToSlice,listToSlice]
+		common_mat_sliced = common_mat.iloc[listToSlice,listToSlice]
 		#save to excel
-		common_cor_mat_sliced.to_excel(out_folder + "/correlation_matrix_" + network1 + "_" + network2 + ".xlsx") 		
+		common_mat_sliced.to_excel(out_folder + "/" + base_name + "_" + network1 + "_" + network2 + ".xlsx") 		
 		ticks = [0, len(networkToIndexDic.dic[network1]), len(networkToIndexDic.dic[network1]) + len(networkToIndexDic.dic[network2])]                                                                                                                                                                                                                                              
-		plotMatrix(common_cor_mat_sliced.values, out_folder + "/common_cor_matrix_" + network1 + "_" + network2 + ".png", [network1, network2], "Common correlation matrix - " + network1 + "_" + network2, ticks, -1., 1.)
+		plotMatrix(common_mat_sliced.values, out_folder + "/" + base_name + "_" + network1 + "_" + network2 + ".png", [network1, network2], base_name + " - " + network1 + "_" + network2, ticks, -1., 1.)
 		#Plot brain connectome if all coordinates exists for those networks
 		if(max(listToSlice) < len(coords)):
 			coords_sliced = [coords[i] for i in listToSlice]
-			plotConnectome(common_cor_mat_sliced.values, coords_sliced, pair, out_folder, min_r)
+			plotConnectome(common_mat_sliced.values, coords_sliced, pair, out_folder, base_name, min_r)
 
 				   
-def plotSomeNetworks(common_cor_mat,out_folder, networks , coords, min_r):
-	"""Create plots of covariance and correlation matrices for specific networks 
-	param common_cor_mat : two dimensional array (number of parcels, number of parcels).The common correlation matrix with all networks
+def plotSomeNetworks(common_mat, base_name, out_folder, networks, coords, min_r):
+	"""Create plots of covariance\correlation matrices for specific networks 
+	param common_mat : data frame.The common matrix with all networks
+	param base_name: string. Base name for the output files
 	param out_folder: string. The path of output folder
 	param networks: list. List of networks for matrices generating
+	param min_r: float. The minimun R value for connection plotting.
 	return: None
 	"""
-	print("Plot correlation for specified networks")
+	print("Plot correlations for specified networks")
 	ticks = [0]
 	#create a list of indexes to slice
 	listToSlice = []
 	for network in networks:
-		#print (network)
 		if network in networkToIndexDic.dic:
 			# The networkToIndexDic dictionary contains for each network the location (indexes) in the common matrix.
 			listToSlice = listToSlice + list(networkToIndexDic.dic[network])
 			ticks.append(ticks[-1] + len(networkToIndexDic.dic[network]))
 		else:
 			print ( "The " + network + " network does not exist!!!")
-	#common_cor_mat_sliced = common_cor_mat[listToSlice, :][:, listToSlice] 
-	common_cor_mat_sliced = common_cor_mat.iloc[listToSlice,listToSlice] 
+	common_mat_sliced = common_mat.iloc[listToSlice,listToSlice] 
 	#save to excel
-	common_cor_mat_sliced.to_excel(out_folder + "/correlation_matrix_" + str(networks) +  ".xlsx")
-	plotMatrix(common_cor_mat_sliced.values, out_folder + "/common_cor_matrix_" + str(networks) + ".png", networks, "Common correlation matrix - " + str(networks), ticks, -1., 1.)
+	common_mat_sliced.to_excel(out_folder + "/" + base_name + "_" + str(networks) +  ".xlsx")
+	plotMatrix(common_mat_sliced.values, out_folder + "/" + base_name + "_" + str(networks) + ".png", networks, base_name + " - " + str(networks), ticks, -1., 1.)
 	#Plot brain connectome if all coordinates exists for those networks
 	if(max(listToSlice) < len(coords)):
 		coords_sliced = [coords[i] for i in listToSlice]
-		plotConnectome(common_cor_mat_sliced.values, coords_sliced, networks, out_folder, min_r)
+		plotConnectome(common_mat_sliced.values, coords_sliced, networks, out_folder, base_name, min_r)
 		
-def plotAllNetworks(common_cor_mat,out_folder):
-	print("Plot correlation common matrix")
+def plotAllNetworks(common_mat,out_path, title):
+	"""Create plot of covariance\correlation matrix 
+	param common_mat : two dimensional array (number of parcels, number of parcels).The common correlation\covariance matrix with all networks
+	param out_path: string. The path of output file
+	param title: string. Plot title
+	return: None
+	"""
+	print("Plot common matrix")
 	ticks = [0]
-	#create a list of indexes by networks order
+	#create a list of indexes by networks order - important for not prdered atlases like Gordon
 	listOfIndexes = []
 	for network in networkToIndexDic.dic.keys():
-		#print (network)
 		if network in networkToIndexDic.dic:
 			# The networkToIndexDic dictionary contains for each network the location (indexes) in the common matrix.
 			listOfIndexes = listOfIndexes + list(networkToIndexDic.dic[network])
 			ticks.append(ticks[-1] + len(networkToIndexDic.dic[network]))
 		else:
 			print ( "The " + network + " network does not exist!!!")
-	common_cor_mat_new = common_cor_mat[listOfIndexes, :][:, listOfIndexes] 
-	plotMatrix(common_cor_mat_new, out_folder + "/common_cor_matrix.png", networkToIndexDic.dic.keys(), "Common correlation matrix", ticks, -1., 1.)
+	common_mat_new = common_mat[listOfIndexes, :][:, listOfIndexes] 
+	plotMatrix(common_mat_new, out_path, networkToIndexDic.dic.keys(), title, ticks, -1., 1.)
 	
 	
 	
 	
 if __name__ == "__main__":
-
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--out_folder', required=True, type=str, help='output folder for common matrices pkl file (if generated) and plots')
+	parser.add_argument('--out_folder', required=True, type=str, help='output folder')
 	parser.add_argument('--corr_mat', required=True, type=str, help='path to excel file containing the correlation matrix')
+	parser.add_argument('--cov_mat', required=False, type=str, help='path to excel file containing the covariance matrix')
 	parser.add_argument('--networks', required=False, nargs='+', help='Plot the common matrices for some networks, if you want the combination of every two networks use --networks all')
 	parser.add_argument('--atlas', required=False, help='path to atlas coordinates file. Needed only if --networks flag exists')
 	parser.add_argument('--min_r', required=False, type=float, default = 0.7, help='Minumun R value for brain connection plotting')
@@ -168,7 +193,11 @@ if __name__ == "__main__":
 		exit(1)
 		
 	df_corr_mat = pd.read_excel(args.corr_mat, index_col= 0)
-	plotAllNetworks(df_corr_mat.values,args.out_folder)
+	plotAllNetworks(df_corr_mat.values,args.out_folder + "/common_cor_matrix.png", "Common Correlation Matrix")
+	if(args.cov_mat != None):
+		df_cov_mat = pd.read_excel(args.cov_mat, index_col= 0)
+		plotAllNetworks(df_cov_mat.values,args.out_folder + "/common_cov_matrix.png", "Common Covariance Matrix")
+	
 	if args.atlas != None:
 		#extract coordinates from atlas
 		mniCoordsFile = open(args.atlas,"rb")
@@ -184,7 +213,11 @@ if __name__ == "__main__":
 
 	if (args.networks != None):
 		if(args.networks == ["all"]):
-			plotAllCombinations(df_corr_mat, args.out_folder, coords, args.min_r) 
+			plotAllCombinations(df_corr_mat, "Correlation matrix", args.out_folder, coords, args.min_r)
+			if(args.cov_mat != None):			
+				plotAllCombinations(df_cov_mat, "Covariance matrix", args.out_folder, coords, args.min_r) 
 		else:
-			plotSomeNetworks(df_corr_mat,args.out_folder,args.networks, coords, args.min_r)
+			plotSomeNetworks(df_corr_mat, "Correlation matrix", args.out_folder,args.networks, coords, args.min_r)
+			if(args.cov_mat != None):
+				plotSomeNetworks(df_cov_mat, "Covariance matrix", args.out_folder,args.networks, coords, args.min_r)
 			

@@ -11,9 +11,9 @@ subjects_data_dict = string. Path to pkl file containing the subjects' data dict
 
 @Output: 
 correlation_matrix.xlsx: located in out_folder. Excel file with the common correlation matrix.
+covariance_matrix.xlsx: located in out_folder. Excel file with the common correlation matrix.
 correlation_sum.xlsx: located in out_folder. Excel file with correlation score for between and within networks.
-		
-
+covariance_sum.xlsx: located in out_folder. Excel file with covariance score for between and within networks.
 """
 
 import os, sys, pickle, argparse
@@ -31,7 +31,7 @@ def createCommonMat(subjects_data_dict):
 	"""Create common covariance and correlation matrices
 	param subjects_data_dict: dictionary. All subject's data dictionary from post processing step
 	return: (common_cov_mat, common_cor_mat) : tuple. 
-		common_cov_mat - common covariance matrix (264, 264), common_cor_mat - common correlation matrix (264, 264)
+		common_cov_mat - common covariance matrix (num_of_parcels, num_of_parcels), common_cor_mat - common correlation matrix (num_of_parcels, num_of_parcels)
 	"""
 	print("Create common correlation matrix")
 	#covariance matrices
@@ -47,7 +47,7 @@ def createCommonMat(subjects_data_dict):
 
 
 
-def sumCorrScore(out_folder, common_cor_mat):
+def sumCorrScore(out_folder, common_cor_mat, output_path):
 	"""Sun correlation scores for within and between networks and save the results to excel file. 
 	param out_folder: string. Output folder for excel file
 	param common_cor_mat : two dimensional array. The correlation matrix
@@ -95,7 +95,7 @@ def sumCorrScore(out_folder, common_cor_mat):
 		
 	#Save to excel file
 	df = pd.DataFrame(df_raws) 
-	df.to_excel(out_folder + "/correlation_sum.xlsx", index=False)
+	df.to_excel(output_path, index=False)
 
 	
 
@@ -120,9 +120,12 @@ if __name__ == "__main__":
 			columns[i] = network
 	df = pd.DataFrame(common_cor_mat, columns = columns,  index=columns)
 	df.to_excel(args.out_folder + "/correlation_matrix.xlsx")
+	df = pd.DataFrame(common_cov_mat, columns = columns,  index=columns)
+	df.to_excel(args.out_folder + "/covariance_matrix.xlsx")
 	
 	#Summarize whitin and detween correlation
-	sumCorrScore(args.out_folder, common_cor_mat)
+	sumCorrScore(common_cor_mat,args.out_folder + "/correlation_sum.xlsx")
+	sumCorrScore(common_cov_mat,args.out_folder + "/covariance_sum.xlsx" )
 	
 	#print the exucation time
 	end = time.time()
