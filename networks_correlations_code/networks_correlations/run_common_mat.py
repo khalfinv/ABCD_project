@@ -22,8 +22,8 @@ from nilearn.connectome import cov_to_corr
 import nilearn
 import time
 import networkToIndexDic
-import itertools
 import pandas as pd
+import itertools
 
 
 

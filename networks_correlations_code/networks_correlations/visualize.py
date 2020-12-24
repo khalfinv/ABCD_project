@@ -6,6 +6,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 import pandas as pd
 import networkToIndexDic
+import itertools
 
 def plotConnectome(matrix, coords, networks, out_folder, min_r):
 	"""Creates brain plot with connections according to minimum R value
@@ -92,13 +93,15 @@ def plotAllCombinations(common_cor_mat, out_folder, coords, min_r):
 		# The networkToIndexDic dictionary contains for each network the location (indexes) in the common matrix. 		
 		listToSlice = listToSlice + list(networkToIndexDic.dic[network1])
 		listToSlice = listToSlice + list(networkToIndexDic.dic[network2])
-		common_cor_mat_sliced = common_cor_mat[listToSlice, :][:, listToSlice]		
+		common_cor_mat_sliced = common_cor_mat.iloc[listToSlice,listToSlice]
+		#save to excel
+		common_cor_mat_sliced.to_excel(out_folder + "/correlation_matrix_" + network1 + "_" + network2 + ".xlsx") 		
 		ticks = [0, len(networkToIndexDic.dic[network1]), len(networkToIndexDic.dic[network1]) + len(networkToIndexDic.dic[network2])]                                                                                                                                                                                                                                              
-		plotMatrix(common_cor_mat_sliced, out_folder + "/common_cor_matrix_" + network1 + "_" + network2 + ".png", [network1, network2], "Common correlation matrix - " + network1 + "_" + network2, ticks, -1., 1.)
+		plotMatrix(common_cor_mat_sliced.values, out_folder + "/common_cor_matrix_" + network1 + "_" + network2 + ".png", [network1, network2], "Common correlation matrix - " + network1 + "_" + network2, ticks, -1., 1.)
 		#Plot brain connectome if all coordinates exists for those networks
 		if(max(listToSlice) < len(coords)):
 			coords_sliced = [coords[i] for i in listToSlice]
-			plotConnectome(common_cor_mat_sliced, coords_sliced, pair, out_folder, min_r)
+			plotConnectome(common_cor_mat_sliced.values, coords_sliced, pair, out_folder, min_r)
 
 				   
 def plotSomeNetworks(common_cor_mat,out_folder, networks , coords, min_r):
@@ -120,12 +123,15 @@ def plotSomeNetworks(common_cor_mat,out_folder, networks , coords, min_r):
 			ticks.append(ticks[-1] + len(networkToIndexDic.dic[network]))
 		else:
 			print ( "The " + network + " network does not exist!!!")
-	common_cor_mat_sliced = common_cor_mat[listToSlice, :][:, listToSlice] 
-	plotMatrix(common_cor_mat_sliced, out_folder + "/common_cor_matrix_" + str(networks) + ".png", networks, "Common correlation matrix - " + str(networks), ticks, -1., 1.)
+	#common_cor_mat_sliced = common_cor_mat[listToSlice, :][:, listToSlice] 
+	common_cor_mat_sliced = common_cor_mat.iloc[listToSlice,listToSlice] 
+	#save to excel
+	common_cor_mat_sliced.to_excel(out_folder + "/correlation_matrix_" + str(networks) +  ".xlsx")
+	plotMatrix(common_cor_mat_sliced.values, out_folder + "/common_cor_matrix_" + str(networks) + ".png", networks, "Common correlation matrix - " + str(networks), ticks, -1., 1.)
 	#Plot brain connectome if all coordinates exists for those networks
 	if(max(listToSlice) < len(coords)):
 		coords_sliced = [coords[i] for i in listToSlice]
-		plotConnectome(common_cor_mat_sliced, coords_sliced, networks, out_folder, min_r)
+		plotConnectome(common_cor_mat_sliced.values, coords_sliced, networks, out_folder, min_r)
 		
 def plotAllNetworks(common_cor_mat,out_folder):
 	print("Plot correlation common matrix")
@@ -143,6 +149,9 @@ def plotAllNetworks(common_cor_mat,out_folder):
 	common_cor_mat_new = common_cor_mat[listOfIndexes, :][:, listOfIndexes] 
 	plotMatrix(common_cor_mat_new, out_folder + "/common_cor_matrix.png", networkToIndexDic.dic.keys(), "Common correlation matrix", ticks, -1., 1.)
 	
+	
+	
+	
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
@@ -159,8 +168,7 @@ if __name__ == "__main__":
 		exit(1)
 		
 	df_corr_mat = pd.read_excel(args.corr_mat, index_col= 0)
-	common_cor_mat = df_corr_mat.values
-	plotAllNetworks(common_cor_mat,args.out_folder)
+	plotAllNetworks(df_corr_mat.values,args.out_folder)
 	if args.atlas != None:
 		#extract coordinates from atlas
 		mniCoordsFile = open(args.atlas,"rb")
@@ -176,6 +184,7 @@ if __name__ == "__main__":
 
 	if (args.networks != None):
 		if(args.networks == ["all"]):
-			plotAllCombinations(common_cor_mat, args.out_folder, coords, args.min_r) 
+			plotAllCombinations(df_corr_mat, args.out_folder, coords, args.min_r) 
 		else:
-			plotSomeNetworks(common_cor_mat,args.out_folder,args.networks, coords, args.min_r)
+			plotSomeNetworks(df_corr_mat,args.out_folder,args.networks, coords, args.min_r)
+			
