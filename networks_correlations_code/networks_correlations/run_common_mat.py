@@ -47,10 +47,10 @@ def createCommonMat(subjects_data_dict):
 
 
 
-def sumCorrScore(out_folder, common_cor_mat, output_path):
+def sumCorrScore(output_path, common_mat):
 	"""Sun correlation scores for within and between networks and save the results to excel file. 
-	param out_folder: string. Output folder for excel file
-	param common_cor_mat : two dimensional array. The correlation matrix
+	param output_path: string. Output path for excel file
+	param common_mat : two dimensional array. The correlation\covariance matrix
 	return: None
 	"""
 	df_raws = []
@@ -66,7 +66,7 @@ def sumCorrScore(out_folder, common_cor_mat, output_path):
 		count = 0
 		for i in networkToIndexDic.dic[network1]:
 			for j in networkToIndexDic.dic[network2]:
-				r_sum = r_sum + common_cor_mat[i][j]
+				r_sum = r_sum + common_mat[i][j]
 				count = count + 1
 		mean_corr = r_sum / count
 		new_raw['networks name'] = network1 + '_' + network2
@@ -84,7 +84,7 @@ def sumCorrScore(out_folder, common_cor_mat, output_path):
 		num_of_parcels = len(networkToIndexDic.dic[network])
 		for i in range(num_of_parcels):
 			for j in range(i+1,num_of_parcels):
-				r_sum = r_sum + common_cor_mat[parcels[i]][parcels[j]]
+				r_sum = r_sum + common_mat[parcels[i]][parcels[j]]
 				count = count + 1
 		if (num_of_parcels > 1):
 			mean_corr = r_sum / count
@@ -123,9 +123,10 @@ if __name__ == "__main__":
 	df = pd.DataFrame(common_cov_mat, columns = columns,  index=columns)
 	df.to_excel(args.out_folder + "/covariance_matrix.xlsx")
 	
+
 	#Summarize whitin and detween correlation
-	sumCorrScore(common_cor_mat,args.out_folder + "/correlation_sum.xlsx")
-	sumCorrScore(common_cov_mat,args.out_folder + "/covariance_sum.xlsx" )
+	sumCorrScore(args.out_folder + "/correlation_sum.xlsx",common_cor_mat)
+	sumCorrScore(args.out_folder + "/covariance_sum.xlsx", common_cov_mat)
 	
 	#print the exucation time
 	end = time.time()
