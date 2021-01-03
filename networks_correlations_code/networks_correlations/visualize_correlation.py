@@ -133,7 +133,7 @@ if __name__ == "__main__":
 		mniCoordsFile = open(args.atlas,"rb")
 		coords = []
 		for line in mniCoordsFile.read().splitlines():
-			splitedLine = line.decode().split(' ')
+			splitedLine = line.decode().split()
 			newCoord = []
 			for part in splitedLine:
 				if part != '':
