@@ -52,7 +52,9 @@ if __name__ == '__main__':
 					left_indexes = subjects_dic_censored_indexes[subject_folder]["left_indexes"]
 					if(len(left_indexes) < 750):
 						print("ERROR: less than 10 minute scan!!!")
-					time_series = time_series[:,list(left_indexes)]
+					num_of_parcels = 333
+					#Do not include subcortical ROIs
+					time_series = time_series[:num_of_parcels,list(left_indexes)]
 					time_series = np.transpose(time_series)
 					cov_measure = ConnectivityMeasure(cov_estimator=LedoitWolf(assume_centered=False, block_size=1000, store_precision=False), kind='covariance')
 					cov = []
