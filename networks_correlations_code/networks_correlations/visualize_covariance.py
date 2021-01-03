@@ -28,12 +28,11 @@ import itertools
 import visualize_functions as vf
 
 	
-def plotAllCombinations(common_mat, base_name, out_folder, coords):
+def plotAllCombinations(common_mat, base_name, out_folder):
 	"""Create plots of covariance matrices for all combinations of 2 networks. 
 	param common_mat: data frame.The common matrix with all networks
 	param base_name: string. Base name for the output files
 	param out_folder: string. The path of output folder
-	param coords: list.List of atlas coordinates
 	return: None
 	"""
 	print("Plot correlations between every two networks")
@@ -53,7 +52,7 @@ def plotAllCombinations(common_mat, base_name, out_folder, coords):
 			base_name + " - " + network1 + "_" + network2, ticks, common_mat_sliced.values.min(), common_mat_sliced.values.max())
 
 				   
-def plotSomeNetworks(common_mat, base_name, out_folder, networks, coords, vmin, vmax):
+def plotSomeNetworks(common_mat, base_name, out_folder, networks, vmin, vmax):
 	"""Create plots of covariance matrices for specific networks 
 	param common_mat : data frame.The common matrix with all networks
 	param base_name: string. Base name for the output files
@@ -116,30 +115,13 @@ if __name__ == "__main__":
 	parser.add_argument('--atlas', required=False, help='path to atlas coordinates file. Needed only if --networks flag exists')
 	args = parser.parse_args()
 	
-	#Arguments checks
-	if (args.networks != None and args.atlas is None):
-		print ("--atlas is required. Use -h for more details")
-		exit(1)
 		
 	df_mat = pd.read_excel(args.cov_mat, index_col= 0)
 	plotAllNetworks(df_mat.values,args.out_folder + "\covariance_matrix.png", "Common Correlation Matrix", args.vmin, args.vmax)
 	
-	if args.atlas != None:
-		#extract coordinates from atlas
-		mniCoordsFile = open(args.atlas,"rb")
-		coords = []
-		for line in mniCoordsFile.read().splitlines():
-			splitedLine = line.decode().split(' ')
-			newCoord = []
-			for part in splitedLine:
-				if part != '':
-					newCoord.append(float(part))
-			coords.append(newCoord)
-		mniCoordsFile.close()
-	
 	if (args.networks != None):
 		if(args.networks == ["all"]):
-			plotAllCombinations(df_mat, 'covariance_matrix', args.out_folder, coords)
+			plotAllCombinations(df_mat, 'covariance_matrix', args.out_folder)
 		else:
-			plotSomeNetworks(df_mat, 'covariance_matrix', args.out_folder,args.networks, coords, args.vmin, args.vmax)
+			plotSomeNetworks(df_mat, 'covariance_matrix', args.out_folder,args.networks, args.vmin, args.vmax)
 			
