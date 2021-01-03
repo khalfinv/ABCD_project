@@ -131,8 +131,8 @@ if __name__ == "__main__":
     # For each subject run the postprocessing steps
     subject_key = 0
     for file in os.listdir(preproc_folder):
-        subject_key = subject_key + 1
         if file.endswith(".nii") or file.endswith(".nii.gz"):
+            subject_key = subject_key + 1
             full_file = os.path.abspath(os.path.join(preproc_folder, file))
             [pool.apply_async(postProcessing, args=(full_file,str(subject_key),spheres_masker,),callback=collect_results, error_callback = collect_errors)]
     pool.close() 
@@ -140,7 +140,6 @@ if __name__ == "__main__":
 
     #write the allParticipantsDic to pkl file
     print("Write to pkl file")
-
     f = open(os.path.join(out_folder, "subjects_data.pkl"), mode="wb")
     pickle.dump(allParticipantsDic, f)
     f.close()
