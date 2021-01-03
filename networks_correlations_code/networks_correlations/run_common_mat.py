@@ -113,6 +113,7 @@ if __name__ == "__main__":
 	pkl_file.close()
 	(common_cov_mat, common_cor_mat) = createCommonMat(allParticipantsDict)
 	num_of_parcels = common_cor_mat.shape[0]
+	print("num_of_parcels: ", num_of_parcels)
 	#Save common correlation to excel
 	columns = [""] * num_of_parcels
 	for network,indexes in networkToIndexDic.dic.items():
