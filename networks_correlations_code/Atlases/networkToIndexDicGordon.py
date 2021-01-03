@@ -19,16 +19,17 @@ dic = {
 "DorsalAttn" : [40,41,42,48,50,51,54,73,86,87,90,91,94,99,105,106,109,112,154,188,198,202,207,210,235,249,251,252,261,265,270,274],
 "None" : [10,17,18,72,114,117,118,119,120,121,122,123,124,127,128,132,133,134,141,143,158,171,177,178,279,280,281,282,283,284,285,286,287,288,290,291,295,296,299,300,301,302,303,304,305,311,313],
 "RetrosplenialTemporal" : [12,13,129,142,173,293,294,312],
-"CEREBELLUM" : [333,343],
-"THALAMUS" : [334,344],
-"CAUDATE" : [335,345],
-"PUTAMEN" : [336, 346],
-"PALLIDUM" : [337, 347],
-"BRAIN_STEM" : [338],
-"HIPPOCAMPUS" : [339,348],
-"AMYGDALA" : [340,349],
-"ACCUMBENS" : [341, 350],
-"DIENCEPHALON_VENTRAL" : [342,351]
+#Cannot find the coordinates for those subcortical regions
+# "CEREBELLUM" : [333,343],
+# "THALAMUS" : [334,344],
+# "CAUDATE" : [335,345],
+# "PUTAMEN" : [336, 346],
+# "PALLIDUM" : [337, 347],
+# "BRAIN_STEM" : [338],
+# "HIPPOCAMPUS" : [339,348],
+# "AMYGDALA" : [340,349],
+# "ACCUMBENS" : [341, 350],
+# "DIENCEPHALON_VENTRAL" : [342,351]
 }
 
 labelToColorDic = {"None" : "olive", "SMhand" : "cyan", "SMmouth" : "orange", "CinguloOperc" : "purple", "Auditory" : "m", "Default" : "red", "RetrosplenialTemporal" : "grey", 
