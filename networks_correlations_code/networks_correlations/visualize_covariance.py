@@ -10,7 +10,6 @@ cov_mat = string. Path to covariance matrix's excel file
 vmin = float. Minimum value for scale in matrix plot
 vmax = float. Maximum value for scale in matrix plot
 networks = list. Choose networks for ploting. You can choose all combinations. Optional.  
-atlas = string. Path to text file with the atlas' coordinates. Required if networks exists.
 
 
 @Output: 
@@ -109,10 +108,9 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--out_folder', required=True, type=str, help='output folder')
 	parser.add_argument('--cov_mat', required=True, type=str, help='path to excel file containing the covariance matrix')
-	parser.add_argument('--vmin', required=True, default = -1., type=float, help='minimum value for scale in matrix plot')
-	parser.add_argument('--vmax', required=True, default = 1., type=float, help='maximum value for scale in matrix plot')
+	parser.add_argument('--vmin', required=True, type=float, help='minimum value for scale in matrix plot')
+	parser.add_argument('--vmax', required=True, type=float, help='maximum value for scale in matrix plot')
 	parser.add_argument('--networks', required=False, nargs='+', help='Plot the common matrices for some networks, if you want the combination of every two networks use --networks all')
-	parser.add_argument('--atlas', required=False, help='path to atlas coordinates file. Needed only if --networks flag exists')
 	args = parser.parse_args()
 	
 		

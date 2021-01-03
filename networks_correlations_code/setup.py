@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="networks_correlations",
-    version = "0.1",
+    version = "0.2",
     author="Victoria Khalfin Fekson",
     author_email="skhalfin@campus.technion.ac.il",
     packages=['networks_correlations', 'networks_correlations.common_statistics'],
