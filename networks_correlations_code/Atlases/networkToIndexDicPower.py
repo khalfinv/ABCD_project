@@ -8,14 +8,14 @@ Dictionary of all power networks. Key: network's name, Value: the indexes accord
 import numpy as np
 
 dic = {
-"SSH" : range(0,31),
-"SSM" : range(31,36),
-"CO" : range(36,50),
-"Auditory" : range(50,63),
-"DMN" : range(63,121),
-"Memory" : range(121,126),
-"Visual" : range(126,157), 
-"FP" : range(157,181), 
+"SSH" : range(0,30),
+"SSM" : range(30,35),
+"CO" : range(35,49),
+"Auditory" : range(49,62),
+"DMN" : range(62,120),
+"Memory" : range(120,125),
+"Visual" : range(125,156), 
+"FP" : range(156,181), 
 "Salience" : range(181,199),
 "Subcortical" : range(199,212),
 "VAN" : range(212,221),
