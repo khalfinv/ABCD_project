@@ -62,41 +62,29 @@ outliers_exam <- function(df, outlier_col, all_columns){
 }
 
 #Redirect output to file
-sink("stats_output.txt", append=FALSE, split=FALSE)
+LPA_stats_output = "C:/Users/ειχι/Desktop/ABCD_project/LPA_algo/stats_output.txt"
+sink(LPA_stats_output, append=FALSE, split=FALSE)
 options(tibble.print_min = Inf)
 options(max.print = 400)
 #Read the data
-df <- read_excel("LPA_output_model_brain_6.xlsx")
-all_col_scaled <- c('RSFMRI_C_NGD_DT_NGD_DT',
-                     'RSFMRI_C_NGD_DLA_NGD_DLA',
-                     'RSFMRI_C_NGD_FO_NGD_FO', 
-                     'RSFMRI_C_NGD_VTA_NGD_VTA',
-                     'RSFMRI_C_NGD_CGC_NGD_CGC',
-                     'RSFMRI_C_NGD_SA_NGD_SA',
-                     'RSFMRI_C_NGD_CGC_NGD_DT',
-                     'RSFMRI_C_NGD_CGC_NGD_DLA',
-                     'RSFMRI_C_NGD_CGC_NGD_FO',
-                     'RSFMRI_C_NGD_CGC_NGD_SA',
-                     'RSFMRI_C_NGD_CGC_NGD_VTA',
-                     'RSFMRI_C_NGD_DT_NGD_DLA',
-                     'RSFMRI_C_NGD_DT_NGD_FO',
-                     'RSFMRI_C_NGD_DT_NGD_SA',
-                     'RSFMRI_C_NGD_DT_NGD_VTA',
-                     'RSFMRI_C_NGD_DLA_NGD_FO',
-                     'RSFMRI_C_NGD_DLA_NGD_SA',
-                     'RSFMRI_C_NGD_DLA_NGD_VTA',
-                     'RSFMRI_C_NGD_FO_NGD_SA',
-                     'RSFMRI_C_NGD_FO_NGD_VTA',
-                     'RSFMRI_C_NGD_SA_NGD_VTA')
-all_col_not_scaled <- c('CBCL_DSM5_ADHD_not_scaled', 
-                    'BIS_SUM_not_scaled', 
-                    'BAS_RR_not_scaled', 
-                    'BAS_DRIVE_not_scaled', 
-                    'BAS_FS_not_scaled',
-                    'INCRGO_RATE_not_scaled',
-                    'INCRGO_MRT_not_scaled',
-                    'INCRS_RATE_not_scaled',
-                    'INCRS_MRT_not_scaled')
+df <- read_excel("C:/Users/ειχι/Desktop/ABCD_project/LPA_algo/LPA_output_model_4_final.xlsx")
+all_col_scaled <- c('CBCL_SCR_DSM5_ADHD_T', 
+                     'BIS_Y_SS_BIS_SUM', 
+                     'BIS_Y_SS_BAS_RR', 
+                     'BIS_Y_SS_BAS_DRIVE', 
+                     'BIS_Y_SS_BAS_FS',
+                     'TFMRI_SST_ALL_BEH_INCRGO_RT',
+                     'TFMRI_SST_ALL_BEH_INCRS_RT',
+                     'TFMRI_SST_ALL_BEH_INCRS_MRT')
+all_col_not_scaled <- c('CBCL_SCR_DSM5_ADHD_T_not_scaled', 
+                    'BIS_Y_SS_BIS_SUM_not_scaled', 
+                    'BIS_Y_SS_BAS_RR_not_scaled', 
+                    'BIS_Y_SS_BAS_DRIVE_not_scaled', 
+                    'BIS_Y_SS_BAS_FS_not_scaled',
+                    'TFMRI_SST_ALL_BEH_INCRGO_RT_not_scaled',
+                    'TFMRI_SST_ALL_BEH_INCRS_RT_not_scaled',
+                    'TFMRI_SST_ALL_BEH_INCRS_MRT_not_scaled')
+
 
 #Data visualization
 ggboxplot(
@@ -191,27 +179,14 @@ df_no_outliers %>%
   group_by(variable) %>%
   levene_test(value ~ as.factor(Class))
 
-res.man <- manova(cbind(RSFMRI_C_NGD_DT_NGD_DT,
-                         RSFMRI_C_NGD_DLA_NGD_DLA,
-                         RSFMRI_C_NGD_FO_NGD_FO, 
-                         RSFMRI_C_NGD_VTA_NGD_VTA,
-                         RSFMRI_C_NGD_CGC_NGD_CGC,
-                         RSFMRI_C_NGD_SA_NGD_SA,
-                         RSFMRI_C_NGD_CGC_NGD_DT,
-                         RSFMRI_C_NGD_CGC_NGD_DLA,
-                         RSFMRI_C_NGD_CGC_NGD_FO,
-                         RSFMRI_C_NGD_CGC_NGD_SA,
-                         RSFMRI_C_NGD_CGC_NGD_VTA,
-                         RSFMRI_C_NGD_DT_NGD_DLA,
-                         RSFMRI_C_NGD_DT_NGD_FO,
-                         RSFMRI_C_NGD_DT_NGD_SA,
-                         RSFMRI_C_NGD_DT_NGD_VTA,
-                         RSFMRI_C_NGD_DLA_NGD_FO,
-                         RSFMRI_C_NGD_DLA_NGD_SA,
-                         RSFMRI_C_NGD_DLA_NGD_VTA,
-                         RSFMRI_C_NGD_FO_NGD_SA,
-                         RSFMRI_C_NGD_FO_NGD_VTA,
-                         RSFMRI_C_NGD_SA_NGD_VTA) ~ Class, data = df)
+res.man <- manova(cbind(CBCL_SCR_DSM5_ADHD_T, 
+                        BIS_Y_SS_BIS_SUM, 
+                        BIS_Y_SS_BAS_RR, 
+                        BIS_Y_SS_BAS_DRIVE, 
+                        BIS_Y_SS_BAS_FS,
+                        TFMRI_SST_ALL_BEH_INCRGO_RT,
+                        TFMRI_SST_ALL_BEH_INCRS_RT,
+                        TFMRI_SST_ALL_BEH_INCRS_MRT) ~ Class, data = df)
 summary(res.man)
 
 # Group the data by variable
@@ -229,48 +204,33 @@ print(res)
 
 
 #Run for every variable (not worked with lapply)
-print("RSFMRI_C_NGD_DT_NGD_DT")
-DunnTest(data = df, RSFMRI_C_NGD_DT_NGD_DT ~ Class, method="bonferroni")
-print("RSFMRI_C_NGD_DLA_NGD_DLA")
-DunnTest(data = df, RSFMRI_C_NGD_DLA_NGD_DLA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_FO_NGD_FO")
-DunnTest(data = df, RSFMRI_C_NGD_FO_NGD_FO ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_VTA_NGD_VTA")
-DunnTest(data = df, RSFMRI_C_NGD_VTA_NGD_VTA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_CGC_NGD_CGC")
-DunnTest(data = df, RSFMRI_C_NGD_CGC_NGD_CGC ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_SA_NGD_SA")
-DunnTest(data = df, RSFMRI_C_NGD_SA_NGD_SA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_CGC_NGD_DT")
-DunnTest(data = df, RSFMRI_C_NGD_CGC_NGD_DT ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_CGC_NGD_DLA")
-DunnTest(data = df, RSFMRI_C_NGD_CGC_NGD_DLA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_CGC_NGD_FO")
-DunnTest(data = df, RSFMRI_C_NGD_CGC_NGD_FO ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_CGC_NGD_SA")
-DunnTest(data = df, RSFMRI_C_NGD_CGC_NGD_SA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_CGC_NGD_VTA")
-DunnTest(data = df, RSFMRI_C_NGD_CGC_NGD_VTA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_DT_NGD_DLA")
-DunnTest(data = df, RSFMRI_C_NGD_DT_NGD_DLA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_DT_NGD_FO")
-DunnTest(data = df, RSFMRI_C_NGD_DT_NGD_FO ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_DT_NGD_SA")
-DunnTest(data = df, RSFMRI_C_NGD_DT_NGD_SA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_DT_NGD_VTA")
-DunnTest(data = df, RSFMRI_C_NGD_DT_NGD_VTA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_DLA_NGD_FO")
-DunnTest(data = df, RSFMRI_C_NGD_DLA_NGD_FO ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_DLA_NGD_SA")
-DunnTest(data = df, RSFMRI_C_NGD_DLA_NGD_SA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_DLA_NGD_VTA")
-DunnTest(data = df, RSFMRI_C_NGD_DLA_NGD_VTA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_FO_NGD_SA")
-DunnTest(data = df, RSFMRI_C_NGD_FO_NGD_SA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_FO_NGD_VTA")
-DunnTest(data = df, RSFMRI_C_NGD_FO_NGD_VTA ~ Class, method="bonferroni") 
-print("RSFMRI_C_NGD_SA_NGD_VTA")
-DunnTest(data = df, RSFMRI_C_NGD_SA_NGD_VTA ~ Class, method="bonferroni") 
+for (col in all_col_scaled){
+  col_new = paste(col,"_not_scaled",sep="")
+  formula = paste(col,"~ Class",sep=" ")
+  print(formula)
+  DunnTest(data = df, formula, method="bonferroni")
+}
+  
+print("CBCL_SCR_DSM5_ADHD_T")
+DunnTest(data = df, CBCL_SCR_DSM5_ADHD_T ~ Class, method="bonferroni")
+print("BIS_Y_SS_BIS_SUM")
+DunnTest(data = df, BIS_Y_SS_BIS_SUM ~ Class, method="bonferroni") 
+print("BIS_Y_SS_BAS_RR")
+DunnTest(data = df, BIS_Y_SS_BAS_RR ~ Class, method="bonferroni") 
+print("BIS_Y_SS_BAS_DRIVE")
+DunnTest(data = df, BIS_Y_SS_BAS_DRIVE ~ Class, method="bonferroni") 
+print("BIS_Y_SS_BAS_FS")
+DunnTest(data = df, BIS_Y_SS_BAS_FS ~ Class, method="bonferroni") 
+print("TFMRI_SST_ALL_BEH_INCRGO_RT")
+DunnTest(data = df, TFMRI_SST_ALL_BEH_INCRGO_RT ~ Class, method="bonferroni") 
+print("TFMRI_SST_ALL_BEH_INCRGO_MRT")
+DunnTest(data = df, TFMRI_SST_ALL_BEH_INCRGO_MRT ~ Class, method="bonferroni") 
+print("TFMRI_SST_ALL_BEH_INCRS_RT")
+DunnTest(data = df, TFMRI_SST_ALL_BEH_INCRS_RT ~ Class, method="bonferroni") 
+print("TFMRI_SST_ALL_BEH_INCRS_MRT")
+DunnTest(data = df, TFMRI_SST_ALL_BEH_INCRS_MRT ~ Class, method="bonferroni") 
+print("NIHTBX_FLANKER_FC")
+DunnTest(data = df, NIHTBX_FLANKER_FC ~ Class, method="bonferroni") 
 
 
 

@@ -15,68 +15,43 @@ library(reshape)
 
 
 # read the data
-data <- read_excel("C:/Users/Χ•Χ™Χ§Χ™/Desktop/googleDriveSync/secondDegree/ABCD_important_data/profile_data.xlsx")
+input_file = "C:/Users/ειχι/Desktop/googleDriveSync/secondDegree/ABCD_important_data/final_dataset.xlsx"
+data <- read_excel(input_file)
 #delete empty rows
 data <- na.omit(data)
-#write_xlsx(data,"C:/Users/Χ•Χ™Χ§Χ™/Desktop/googleDriveSync/secondDegree/ABCD_important_data/profile_data.xlsx")
-# Redicrect output to file
-sink("LPA_Output.txt", append=FALSE, split=FALSE)
+# Redirect output to file
+LPA_consule_output = "C:/Users/ειχι/Desktop/ABCD_project/LPA_algo/LPA_Output.txt"
+sink(LPA_consule_output, append=FALSE, split=FALSE)
 options(dplyr.width = Inf)
+columns = c('CBCL_SCR_DSM5_ADHD_T',
+             'BIS_Y_SS_BIS_SUM',
+             'BIS_Y_SS_BAS_RR',
+             'BIS_Y_SS_BAS_DRIVE',
+             'BIS_Y_SS_BAS_FS',
+             'TFMRI_SST_ALL_BEH_INCRGO_RT',
+             'TFMRI_SST_ALL_BEH_INCRS_RT',
+             'TFMRI_SST_ALL_BEH_INCRS_MRT')
 #Run LPA with n models
 lpa_models <- data %>%
-  select(RSFMRI_C_NGD_DT_NGD_DT,
-         RSFMRI_C_NGD_DLA_NGD_DLA,
-         RSFMRI_C_NGD_FO_NGD_FO, 
-         RSFMRI_C_NGD_VTA_NGD_VTA,
-         RSFMRI_C_NGD_CGC_NGD_CGC,
-         RSFMRI_C_NGD_SA_NGD_SA,
-         RSFMRI_C_NGD_CGC_NGD_DT,
-         RSFMRI_C_NGD_CGC_NGD_DLA,
-         RSFMRI_C_NGD_CGC_NGD_FO,
-         RSFMRI_C_NGD_CGC_NGD_SA,
-         RSFMRI_C_NGD_CGC_NGD_VTA,
-         RSFMRI_C_NGD_DT_NGD_DLA,
-         RSFMRI_C_NGD_DT_NGD_FO,
-         RSFMRI_C_NGD_DT_NGD_SA,
-         RSFMRI_C_NGD_DT_NGD_VTA,
-         RSFMRI_C_NGD_DLA_NGD_FO,
-         RSFMRI_C_NGD_DLA_NGD_SA,
-         RSFMRI_C_NGD_DLA_NGD_VTA,
-         RSFMRI_C_NGD_FO_NGD_SA,
-         RSFMRI_C_NGD_FO_NGD_VTA,
-         RSFMRI_C_NGD_SA_NGD_VTA
-         ) %>%
+  select(columns) %>%
   single_imputation() %>%
-#  scale() %>%
-  estimate_profiles(1:8)
-#Redirect back to consule
+  scale() %>%
+  estimate_profiles(1:6)
+#Redirect back to console
 #sink()
 #Get the output for all the models
 get_fit(lpa_models)
 #Get the chosen model and save to excel file
-df <- get_data(lpa_models[[6]])
-#Add subject key column - not tested
-#df$SUBJECTKEY <- paste(data$SUBJECTKEY)
-write_xlsx(df,"LPA_output_model_brain_6.xlsx")
+df <- get_data(lpa_models[[4]])
+
 #Calculate mean value for each variable (column) per class
-means <- aggregate(select(df, -c(model_number, classes_number, CPROB1, CPROB2,CPROB3,CPROB4,CPROB5,CPROB6, Class)),
+means <- aggregate(select(df, -c(model_number, classes_number, CPROB1, CPROB2,CPROB3,CPROB4, Class)),
                  by=list(df$Class), mean) %>%
                 t() %>%
-                melt(id.vars = "Group.1", measure.vars = c("V1", "V2", "V3","V4","V5","V6")) %>%
+                melt(id.vars = "Group.1", measure.vars = c("V1", "V2", "V3","V4")) %>%
                 subset(X1!="Group.1")
 #Plot the means
 means %>%
-  subset(means$X2 == 3 | means$X2 == 1)%>%
-  subset(means$X1 == 'RSFMRI_C_NGD_CGC_NGD_DT' |
-         means$X1 == 'RSFMRI_C_NGD_CGC_NGD_FO' |
-         means$X1 == 'RSFMRI_C_NGD_CGC_NGD_SA' |
-         means$X1 == 'RSFMRI_C_NGD_CGC_NGD_VTA' |
-         means$X1 == 'RSFMRI_C_NGD_DT_NGD_DLA' |
-         means$X1 == 'RSFMRI_C_NGD_DT_NGD_SA' |
-         means$X1 == 'RSFMRI_C_NGD_DT_NGD_VTA' |
-         means$X1 == 'RSFMRI_C_NGD_SA_NGD_SA' |
-         means$X1 == 'RSFMRI_C_NGD_SA_NGD_VTA' |
-         means$X1 == 'RSFMRI_C_NGD_VTA_NGD_VTA') %>%
   ggplot(aes(X1,value, group = X2, color = as.factor(X2))) +
   geom_point(size = 2.25) +
   geom_line(size = 1.25) +
@@ -84,3 +59,14 @@ means %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "top")+
   labs(x = NULL, y = "Standardized mean", color = "classes") 
 
+#Add originals columns ans save the data frame
+for (col in columns){
+  col_new = paste(col,"_not_scaled",sep="")
+  df[col_new] = paste(data[[col]])
+  print(col_new)
+}
+
+#Add subject key column
+df$SUBJECTKEY <- paste(data$SUBJECTKEY)
+profiles_output_data = "C:/Users/ειχι/Desktop/ABCD_project/LPA_algo/LPA_output_model_4_final.xlsx"
+write_xlsx(df,profiles_output_data)
