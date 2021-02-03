@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 import pandas as pd
-import networkToIndexDic
+import networks_correlations.networkToIndexDic as net_dic
 import itertools
 
 def plotConnectome(matrix, coords, networks, out_folder, base_name, min_r):
@@ -29,12 +29,12 @@ def plotConnectome(matrix, coords, networks, out_folder, base_name, min_r):
 	index2network = {}
 	last_index = 0
 	for network in networks:
-		network_color = [networkToIndexDic.labelToColorDic[network]] * len(list(networkToIndexDic.dic[network]))
+		network_color = [net_dic.labelToColorDic[network]] * len(list(net_dic.dic[network]))
 		colors = colors + network_color
-		for i in range(last_index, last_index + len(list(networkToIndexDic.dic[network]))):
+		for i in range(last_index, last_index + len(list(net_dic.dic[network]))):
 			index2network[i] = network
 			last_index = i+1
-		network_patch = mpatches.Patch(color=networkToIndexDic.labelToColorDic[network], label=network)
+		network_patch = mpatches.Patch(color=net_dic.labelToColorDic[network], label=network)
 		patches_list.append(network_patch)
 	correlated_coords = {} 
 	for i in range(1,len(matrix)):
@@ -50,7 +50,7 @@ def plotConnectome(matrix, coords, networks, out_folder, base_name, min_r):
 		fig.legend(handles=patches_list, loc = "upper center")
 		fig.savefig(plot_name)
 		plt.close()
-	view = plotting.view_connectome(matrix, coords, edge_threshold=min_r, node_size = 7) 
+	view = plotting.view_connectome(matrix, coords, edge_threshold=min_r, node_size = 7, symmetric_cmap = True) 
 	html_name = out_folder + "/" + base_name + "_brain_plot" + str(networks) + ".html"
 	view.save_as_html(html_name)
 	
@@ -78,7 +78,7 @@ def plotMatrix(matrix, plot_path, labels, title, ticks, vmin = -1., vmax = 1.):
 	plt.yticks(ticks_middle,list(labels))
 	plt.xticks(ticks_middle,list(labels), rotation = 55, horizontalalignment='right')
 	for item in (ax.get_xticklabels() + ax.get_yticklabels()):
-		item.set_color(networkToIndexDic.labelToColorDic[item.get_text()])
+		item.set_color(net_dic.labelToColorDic[item.get_text()])
 		item.set_fontsize(14)
 	fig.savefig(plot_path)
 	plt.close()
