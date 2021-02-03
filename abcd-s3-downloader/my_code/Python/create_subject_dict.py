@@ -5,11 +5,11 @@ import numpy as np
 from sklearn.covariance import LedoitWolf
 from nilearn.connectome import ConnectivityMeasure
 import time
-'''
+import multiprocessing
 
-Run example
-create_cov_mat.py --time_series_folder Y:\Vicki\ABCD_derivatives\Gordon_time_series\derivatives\abcd-hcp-pipeline --corr_matrix_folder Y:\Vicki\ABCD_derivatives\Connectivity_Matrix\derivatives\abcd-hcp-pipeline
-'''
+
+def get_time_series(path_to_excel):
+	return pd.read_csv(path_to_excel, header=None).to_numpy()
 if __name__ == '__main__':
 	start = time.time()
 	parser = argparse.ArgumentParser()
@@ -48,7 +48,8 @@ if __name__ == '__main__':
 				if(os.path.exists(full_path)):	
 					subject_key = subject_folder.split('-')[1]
 					subject_key = subject_key[:4] + '_' + subject_key[4:]
-					time_series = pd.read_csv(full_path, header=None).to_numpy()
+					time_series = multiprocessing.Pool(1).map(get_time_series, [full_path])[0]
+					#time_series = get_time_series(full_path)
 					left_indexes = subjects_dic_censored_indexes[subject_folder]["left_indexes"]
 					if(len(left_indexes) < 750):
 						print("ERROR: less than 10 minute scan!!!")
