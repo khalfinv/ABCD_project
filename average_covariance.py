@@ -27,7 +27,11 @@ if __name__ == "__main__":
 		all_mat.append(val["covariance"])
 	
 	print(np.array(all_mat).shape)
-	avg_cov_mat = utils.mean.mean_covariance(np.array(all_mat))
+	avg_cov_mat = all_mat[0]
+	for mat in all_mat[1:]:
+		avg_cov_mat = np.add(avg_cov_mat,mat)
+	avg_cov_mat = avg_cov_mat/num_of_subjects
+	#avg_cov_mat = utils.mean.mean_covariance(np.array(all_mat),metric = 'euclid')
 	avg_cor_mat = nilearn.connectome.cov_to_corr(avg_cov_mat) 
 	
 	df = pd.DataFrame(avg_cor_mat)
