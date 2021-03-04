@@ -32,6 +32,7 @@ if __name__ == "__main__":
 	parser.add_argument('--corr_mat2', required=True, type=str, help='path to excel file containing the correlation matrix 2')
 	parser.add_argument('--n1', required=True, type=int, help='Number of subjects in correlation matrix 1')
 	parser.add_argument('--n2', required=True, type=int, help='Number of subjects in correlation matrix 2')
+	parser.add_argument('--atlas', required=True, type=str, help='Path to atlas coordinates')
 	args = parser.parse_args()
 		
 	df_corr_mat1 = pd.read_excel(args.corr_mat1, index_col= 0)
@@ -55,14 +56,16 @@ if __name__ == "__main__":
 
 	after_correction = p_values <= alpha #significant after bonferroni correction
 	
-	effect_size = abs(z_corr_mat1 - z_corr_mat2)
-	pd.DataFrame(effect_size, index = df_corr_mat1.index, columns = df_corr_mat1.columns).to_excel(args.out_folder + "/effect_sizes.xlsx")
-	sig_and_effect_size = np.logical_and(effect_size > 0.5 , after_correction)
+	effect_size_thr = 0.3
+	effect_size_table = abs(z_corr_mat1 - z_corr_mat2)
+	pd.DataFrame(effect_size_table, index = df_corr_mat1.index, columns = df_corr_mat1.columns).to_excel(args.out_folder + "/effect_sizes.xlsx")
+	
+	sig_and_effect_size = np.logical_and(effect_size_table > effect_size_thr , after_correction)
 	
 	sig_and_es_mat_1 = df_corr_mat1[pd.DataFrame(sig_and_effect_size, index = df_corr_mat1.index, columns = df_corr_mat1.columns)]
 	sig_and_es_mat_2 = df_corr_mat2[pd.DataFrame(sig_and_effect_size, index = df_corr_mat2.index, columns = df_corr_mat2.columns)]
-	sig_and_es_mat_1.to_excel(args.out_folder + "/sig_and_es_mat_1.xlsx")
-	sig_and_es_mat_2.to_excel(args.out_folder + "/sig_and_es_mat_2.xlsx")
+	sig_and_es_mat_1.to_excel(args.out_folder + "/sig_mat_1_" + str(effect_size_thr) + ".xlsx")
+	sig_and_es_mat_2.to_excel(args.out_folder + "/sig_mat_2_" + str(effect_size_thr) + ".xlsx")
 	
 	#Significant correlation in each matrix
 	sig_values_mat_1 = df_corr_mat1[pd.DataFrame(after_correction, index = df_corr_mat1.index, columns = df_corr_mat1.columns)]
@@ -72,7 +75,7 @@ if __name__ == "__main__":
 
 	#Visualization- need to modify
 	#extract coordinates from atlas
-	mniCoordsFile = open("../../Atlases/MNI_Gordon.txt","rb")
+	mniCoordsFile = open(args.atlas,"rb")
 	coords = []
 	for line in mniCoordsFile.read().splitlines():
 		splitedLine = line.decode().split()
@@ -100,11 +103,11 @@ if __name__ == "__main__":
 		vf.plotConnectome(sig_values_mat_1.values, coords_sliced, [network], args.out_folder, "matrix1", min_r)
 		
 	#plot-  significant and effect size
-	vf.plotMatrix(sig_and_es_mat_1.values, args.out_folder + "/sig_and_es_mat_1.png", [network], "Significant and effect size Values Matrix 1",ticks)
+	vf.plotMatrix(sig_and_es_mat_1.values, args.out_folder + "/sig_mat_1_" + str(effect_size_thr) + ".png", [network], "Effect size > " + str(effect_size_thr) + " Values Matrix 1",ticks)
 	#Plot brain connectome if all coordinates exists for those networks
 	if(max(listToSlice) < len(coords)):
 		coords_sliced = [coords[i] for i in listToSlice]
-		vf.plotConnectome(sig_and_es_mat_1.values, coords_sliced, [network], args.out_folder, "sig_and_es_matrix1", min_r)
+		vf.plotConnectome(sig_and_es_mat_1.values, coords_sliced, [network], args.out_folder, "sig_matrix1_" + str(effect_size_thr), min_r)
 		
 	#Same for matrix 2
 	#save to excel
@@ -115,11 +118,11 @@ if __name__ == "__main__":
 		vf.plotConnectome(sig_values_mat_2.values, coords_sliced, [network], args.out_folder, "matrix2", min_r)
 		
 	#plot-  significant and effect size
-	vf.plotMatrix(sig_and_es_mat_2.values, args.out_folder + "/sig_and_es_mat_2.png", [network], "Significant and effect size Values Matrix 2",ticks)
+	vf.plotMatrix(sig_and_es_mat_2.values, args.out_folder + "/sig_mat_2_" + str(effect_size_thr) + ".png", [network], "Effect size > " + str(effect_size_thr) + " Matrix 2",ticks)
 	#Plot brain connectome if all coordinates exists for those networks
 	if(max(listToSlice) < len(coords)):
 		coords_sliced = [coords[i] for i in listToSlice]
-		vf.plotConnectome(sig_and_es_mat_2.values, coords_sliced, [network], args.out_folder, "sig_and_es_matrix2", min_r)
+		vf.plotConnectome(sig_and_es_mat_2.values, coords_sliced, [network], args.out_folder, "sig_matrix2_" + str(effect_size_thr), min_r)
 		
 		
 	fig, ax = plt.subplots()
