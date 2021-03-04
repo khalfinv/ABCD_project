@@ -3,7 +3,7 @@ import os, sys, argparse, pickle
 import pandas as pd
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--subjects_dic', required=True, type=str, help='path to okl file with all subjects')
+	parser.add_argument('--subjects_dic', required=True, type=str, help='path to pkl file with all subjects')
 	parser.add_argument('--profiles', required=True, type=str, help='path to excel file with the profiles')
 	parser.add_argument('--out_folder', required=True, type=str, help='path to output folder')
 	args = parser.parse_args()
