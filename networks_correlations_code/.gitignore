@@ -2,4 +2,3 @@ dist/*
 build/*
 *.egg-info/*
 Atlases/test_out
-networks_correlations/networkToIndexDic.py
