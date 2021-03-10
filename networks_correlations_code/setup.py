@@ -8,9 +8,9 @@ setuptools.setup(
     author_email="skhalfin@campus.technion.ac.il",
     packages=['networks_correlations', 'networks_correlations.common_statistics','networks_correlations.statistics'],
     install_requires=['nilearn', 'numpy', 'matplotlib','seaborn','openpyxl'],
-    classifiers=(
+    classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-    ),
+    ],
 )
