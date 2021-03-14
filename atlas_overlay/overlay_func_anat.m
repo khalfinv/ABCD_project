@@ -8,7 +8,7 @@
 % 5. creating an excel
 func_atlas_info=load_nii('gordon_Parcels_MNI_111.nii')
 func_atlas=func_atlas_info.img;
-anat_atlas_info=load_nii('AAL_space-MNI152NLin6_res-1x1x1.nii')
+anat_atlas_info=load_nii('Talairach_space-MNI152NLin6_res-1x1x1.nii')
 anat_atlas=anat_atlas_info.img;
 slice=squeeze(anat_atlas(:,100,:));
 slice2=squeeze(func_atlas(:,100,:));
@@ -37,9 +37,9 @@ for i=1:number_of_regions
     array_labels = []
     for j=1:length(numbers)
         label = anat_labels(ismember(anat_labels.Var1,numbers(j)),:).Var2
-        %if (contains(label,"Gray Matter"))
-        array_labels = [array_labels,label]
-        %end
+        if (contains(label,"Gray Matter"))
+			array_labels = [array_labels,label]
+        end
     end
     if(isempty(array_labels) == 0)
         str_labels = strjoin(array_labels,', ')
